@@ -1,3 +1,3 @@
 module github.com/hrfee/mediabrowser
 
-go 1.16
+go 1.15
