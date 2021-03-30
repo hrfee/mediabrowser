@@ -320,3 +320,13 @@ func (mb *MediaBrowser) SetDisplayPreferences(userID string, displayprefs map[st
 	}
 	return embySetDisplayPreferences(mb, userID, displayprefs)
 }
+
+// ResetPassword resets a user's password by setting it to the given PIN,
+// which is generated when a user attempts to reset on the login page.
+// Only supported on Jellyfin, will return (PasswordResetResponse, -1, nil) on Emby.
+func (mb *MediaBrowser) ResetPassword(pin string) (PasswordResetResponse, int, error) {
+	if mb.serverType == EmbyServer {
+		return PasswordResetResponse{}, -1, nil
+	}
+	return jfResetPassword(mb, pin)
+}

@@ -160,3 +160,16 @@ func jfSetDisplayPreferences(jf *MediaBrowser, userID string, displayprefs map[s
 	}
 	return status, nil
 }
+
+func jfResetPassword(jf *MediaBrowser, pin string) (PasswordResetResponse, int, error) {
+	url := fmt.Sprintf("%s/Users/ForgotPassword/Pin", jf.Server)
+	resp, status, err := jf.post(url, map[string]string{
+		"Pin": pin,
+	}, true)
+	recv := PasswordResetResponse{}
+	if err != nil || status != 200 {
+		return recv, status, err
+	}
+	json.Unmarshal([]byte(resp), &recv)
+	return recv, status, err
+}

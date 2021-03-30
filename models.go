@@ -116,3 +116,8 @@ type Policy struct {
 	PasswordResetProviderID          string        `json:"PasswordResetProviderId"`
 	SyncPlayAccess                   string        `json:"SyncPlayAccess"`
 }
+
+type PasswordResetResponse struct {
+	Success    bool     `json:"Success"`
+	UsersReset []string `json:"UsersReset"`
+}
