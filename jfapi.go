@@ -15,6 +15,20 @@ func jfDeleteUser(jf *MediaBrowser, userID string) (int, error) {
 	}
 	resp, err := jf.httpClient.Do(req)
 	defer jf.timeoutHandler()
+	defer resp.Body.Close()
+	data := ""
+	if jf.Verbose {
+		data = bodyToString(resp)
+	}
+	// Should be 404 but sometimes isn't
+	if resp.StatusCode == 404 || resp.StatusCode == 500 {
+		err = ErrUserNotFound{id: userID}
+		if jf.Verbose {
+			json.Unmarshal([]byte(data), &err)
+		}
+	} else if customErr := jf.genericErr(resp.StatusCode, data); customErr != nil {
+		err = customErr
+	}
 	return resp.StatusCode, err
 }
 
@@ -31,12 +45,14 @@ func jfGetUsers(jf *MediaBrowser, public bool) ([]User, int, error) {
 			url := fmt.Sprintf("%s/users", jf.Server)
 			data, status, err = jf.get(url, jf.loginParams)
 		}
+		if customErr := jf.genericErr(status, data); customErr != nil {
+			err = customErr
+		}
 		if err != nil || status != 200 {
 			return nil, status, err
 		}
 		err := json.Unmarshal([]byte(data), &result)
 		if err != nil {
-			fmt.Println(err)
 			return nil, status, err
 		}
 		jf.userCache = result
@@ -44,7 +60,7 @@ func jfGetUsers(jf *MediaBrowser, public bool) ([]User, int, error) {
 		if result[0].ID[8] == '-' {
 			jf.Hyphens = true
 		}
-		return result, status, nil
+		return result, status, err
 	}
 	return jf.userCache, 200, nil
 }
@@ -61,7 +77,7 @@ func jfUserByName(jf *MediaBrowser, username string, public bool) (User, int, er
 				return user, status, err
 			}
 		}
-		return User{}, status, err
+		return User{}, status, ErrUserNotFound{user: username}
 	}
 	match, status, err := find()
 	if match.Name == "" {
@@ -78,6 +94,7 @@ func jfUserByID(jf *MediaBrowser, userID string, public bool) (User, int, error)
 				return user, 200, nil
 			}
 		}
+		// If the user isn't found in the cache then we update it
 	}
 	if public {
 		users, status, err := jf.GetUsers(public)
@@ -89,7 +106,7 @@ func jfUserByID(jf *MediaBrowser, userID string, public bool) (User, int, error)
 				return user, status, nil
 			}
 		}
-		return User{}, status, err
+		return User{}, status, ErrUserNotFound{id: userID}
 	}
 	var result User
 	var data string
@@ -97,6 +114,14 @@ func jfUserByID(jf *MediaBrowser, userID string, public bool) (User, int, error)
 	var err error
 	url := fmt.Sprintf("%s/users/%s", jf.Server, userID)
 	data, status, err = jf.get(url, jf.loginParams)
+	if status == 404 || status == 400 {
+		err = ErrUserNotFound{id: userID}
+		if jf.Verbose {
+			json.Unmarshal([]byte(data), &err)
+		}
+	} else if customErr := jf.genericErr(status, data); customErr != nil {
+		err = customErr
+	}
 	if err != nil || status != 200 {
 		return User{}, status, err
 	}
@@ -110,37 +135,51 @@ func jfNewUser(jf *MediaBrowser, username, password string) (User, int, error) {
 		"Name":     username,
 		"Password": password,
 	}
-	data := make(map[string]interface{})
+	data := map[string]interface{}{}
 	for key, value := range stringData {
 		data[key] = value
 	}
-	response, status, err := jf.post(url, data, true)
-	var recv User
-	json.Unmarshal([]byte(response), &recv)
+	resp, status, err := jf.post(url, data, true)
+	if customErr := jf.genericErr(status, resp); customErr != nil {
+		err = customErr
+	}
 	if err != nil || !(status == 200 || status == 204) {
 		return User{}, status, err
 	}
+	var recv User
+	json.Unmarshal([]byte(resp), &recv)
 	return recv, status, nil
 }
 
 func jfSetPolicy(jf *MediaBrowser, userID string, policy Policy) (int, error) {
 	url := fmt.Sprintf("%s/Users/%s/Policy", jf.Server, userID)
-	_, status, err := jf.post(url, policy, false)
-	if err != nil || status != 200 {
-		return status, err
+	data, status, err := jf.post(url, policy, true)
+	if status == 400 {
+		err = ErrNoPolicySupplied{}
+		if jf.Verbose {
+			json.Unmarshal([]byte(data), &err)
+		}
+	} else if customErr := jf.genericErr(status, data); customErr != nil {
+		err = customErr
 	}
-	return status, nil
+	return status, err
 }
 
 func jfSetConfiguration(jf *MediaBrowser, userID string, configuration Configuration) (int, error) {
 	url := fmt.Sprintf("%s/Users/%s/Configuration", jf.Server, userID)
-	_, status, err := jf.post(url, configuration, false)
+	data, status, err := jf.post(url, configuration, true)
+	if customErr := jf.genericErr(status, data); customErr != nil {
+		err = customErr
+	}
 	return status, err
 }
 
 func jfGetDisplayPreferences(jf *MediaBrowser, userID string) (map[string]interface{}, int, error) {
 	url := fmt.Sprintf("%s/DisplayPreferences/usersettings?userId=%s&client=emby", jf.Server, userID)
 	data, status, err := jf.get(url, nil)
+	if customErr := jf.genericErr(status, data); customErr != nil {
+		err = customErr
+	}
 	if err != nil || !(status == 204 || status == 200) {
 		return nil, status, err
 	}
@@ -154,7 +193,10 @@ func jfGetDisplayPreferences(jf *MediaBrowser, userID string) (map[string]interf
 
 func jfSetDisplayPreferences(jf *MediaBrowser, userID string, displayprefs map[string]interface{}) (int, error) {
 	url := fmt.Sprintf("%s/DisplayPreferences/usersettings?userId=%s&client=emby", jf.Server, userID)
-	_, status, err := jf.post(url, displayprefs, false)
+	data, status, err := jf.post(url, displayprefs, true)
+	if customErr := jf.genericErr(status, data); customErr != nil {
+		err = customErr
+	}
 	if err != nil || !(status == 204 || status == 200) {
 		return status, err
 	}
@@ -166,6 +208,9 @@ func jfResetPassword(jf *MediaBrowser, pin string) (PasswordResetResponse, int, 
 	resp, status, err := jf.post(url, map[string]string{
 		"Pin": pin,
 	}, true)
+	if customErr := jf.genericErr(status, resp); customErr != nil {
+		err = customErr
+	}
 	recv := PasswordResetResponse{}
 	if err != nil || status != 200 {
 		return recv, status, err

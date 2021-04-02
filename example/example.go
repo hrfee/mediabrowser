@@ -36,6 +36,7 @@ func main() {
 		timeoutHandler,
 		cacheTimeout,
 	)
+	mb.Verbose = true
 	_, status, err := mb.Authenticate(username, password)
 	if err != nil || status != 200 {
 		log.Fatalf("Failed to authenticate: Status %d Error %v", status, err)

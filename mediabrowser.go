@@ -77,6 +77,7 @@ type MediaBrowser struct {
 	Hyphens        bool
 	serverType     serverType
 	timeoutHandler TimeoutHandler
+	Verbose        bool // Jellyfin only, errors will include more info when true
 }
 
 // NewServer returns a new Mediabrowser object.
@@ -107,6 +108,7 @@ func NewServer(st serverType, server, client, version, device, deviceID string, 
 	req, _ := http.NewRequest("GET", infoURL, nil)
 	resp, err := mb.httpClient.Do(req)
 	defer mb.timeoutHandler()
+	defer resp.Body.Close()
 	if err == nil {
 		data, _ := ioutil.ReadAll(resp.Body)
 		json.Unmarshal(data, &mb.ServerInfo)
@@ -114,6 +116,20 @@ func NewServer(st serverType, server, client, version, device, deviceID string, 
 	mb.cacheLength = cacheTimeout
 	mb.CacheExpiry = time.Now()
 	return mb, nil
+}
+
+func bodyToString(resp *http.Response) string {
+	var data io.Reader
+	encoding := resp.Header.Get("Content-Encoding")
+	switch encoding {
+	case "gzip":
+		data, _ = gzip.NewReader(resp.Body)
+	default:
+		data = resp.Body
+	}
+	buf := new(strings.Builder)
+	io.Copy(buf, data)
+	return buf.String()
 }
 
 func (mb *MediaBrowser) get(url string, params map[string]string) (string, int, error) {
@@ -129,6 +145,7 @@ func (mb *MediaBrowser) get(url string, params map[string]string) (string, int, 
 	}
 	resp, err := mb.httpClient.Do(req)
 	defer mb.timeoutHandler()
+	defer resp.Body.Close()
 	if err != nil || resp.StatusCode != 200 {
 		if resp.StatusCode == 401 && mb.Authenticated {
 			mb.Authenticated = false
@@ -140,20 +157,9 @@ func (mb *MediaBrowser) get(url string, params map[string]string) (string, int, 
 		}
 		return "", resp.StatusCode, err
 	}
-	defer resp.Body.Close()
-	var data io.Reader
-	encoding := resp.Header.Get("Content-Encoding")
-	switch encoding {
-	case "gzip":
-		data, _ = gzip.NewReader(resp.Body)
-	default:
-		data = resp.Body
-	}
-	buf := new(strings.Builder)
-	io.Copy(buf, data)
 	//var respData map[string]interface{}
 	//json.NewDecoder(data).Decode(&respData)
-	return buf.String(), resp.StatusCode, nil
+	return bodyToString(resp), resp.StatusCode, nil
 }
 
 func (mb *MediaBrowser) post(url string, data interface{}, response bool) (string, int, error) {
@@ -164,6 +170,7 @@ func (mb *MediaBrowser) post(url string, data interface{}, response bool) (strin
 	}
 	resp, err := mb.httpClient.Do(req)
 	defer mb.timeoutHandler()
+	defer resp.Body.Close()
 	if err != nil || resp.StatusCode != 200 {
 		if resp.StatusCode == 401 && mb.Authenticated {
 			mb.Authenticated = false
@@ -177,16 +184,7 @@ func (mb *MediaBrowser) post(url string, data interface{}, response bool) (strin
 	}
 	if response {
 		defer resp.Body.Close()
-		var outData io.Reader
-		switch resp.Header.Get("Content-Encoding") {
-		case "gzip":
-			outData, _ = gzip.NewReader(resp.Body)
-		default:
-			outData = resp.Body
-		}
-		buf := new(strings.Builder)
-		io.Copy(buf, outData)
-		return buf.String(), resp.StatusCode, nil
+		return bodyToString(resp), resp.StatusCode, nil
 	}
 	return "", resp.StatusCode, nil
 }
@@ -218,6 +216,12 @@ func (mb *MediaBrowser) Authenticate(username, password string) (User, int, erro
 		req.Header.Add(name, value)
 	}
 	resp, err := mb.httpClient.Do(req)
+	// Jellyfin likes to return 400 for a lot of things, even if the api docs don't say so.
+	if resp.StatusCode == 400 {
+		err = ErrUnauthorized{}
+	} else if customErr := mb.genericErr(resp.StatusCode, ""); customErr != nil {
+		err = customErr
+	}
 	if err != nil || resp.StatusCode != 200 {
 		return User{}, resp.StatusCode, err
 	}
