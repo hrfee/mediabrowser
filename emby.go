@@ -206,3 +206,90 @@ func embySetDisplayPreferences(emby *MediaBrowser, userID string, displayprefs m
 	}
 	return status, nil
 }
+
+func embyGetLibraries(emby *MediaBrowser) ([]VirtualFolder, int, error) {
+	var result []VirtualFolder
+	var data string
+	var status int
+	var err error
+	if time.Now().After(emby.LibraryCacheExpiry) {
+		url := fmt.Sprintf("%s/Library/VirtualFolders", emby.Server)
+		data, status, err = emby.get(url, nil)
+		if customErr := emby.genericErr(status, ""); customErr != nil {
+			err = customErr
+		}
+		if err != nil || status != 200 {
+			return nil, status, err
+		}
+		err := json.Unmarshal([]byte(data), &result)
+		if err != nil {
+			return nil, status, err
+		}
+		emby.libraryCache = result
+		emby.LibraryCacheExpiry = time.Now().Add(time.Minute * time.Duration(emby.cacheLength))
+		return result, status, nil
+	}
+	return emby.libraryCache, 200, nil
+}
+
+func embyAddLibrary(emby *MediaBrowser, name string, collectionType string, paths []string, refreshLibrary bool, LibraryOptions LibraryOptions) (int, error) {
+	pathQuery := ""
+	for _, path := range paths {
+		// element is the element from someSlice for where we are
+		pathQuery += fmt.Sprintf("&paths[]=%s", path)
+	}
+	url := fmt.Sprintf("%s/Library/VirtualFolders?client=emby&name=%s&collectiontype=%s&refreshLibrary=%t%s", emby.Server, name, collectionType, refreshLibrary, pathQuery)
+	_, status, err := emby.post(url, LibraryOptions, false)
+	if customErr := emby.genericErr(status, ""); customErr != nil {
+		err = customErr
+	}
+	return status, err
+}
+
+func embyDeleteLibrary(emby *MediaBrowser, name string) (int, error) {
+	url := fmt.Sprintf("%s/Library/VirtualFolders?name=%s", emby.Server, name)
+	req, _ := http.NewRequest("DELETE", url, nil)
+	for name, value := range emby.header {
+		req.Header.Add(name, value)
+	}
+	resp, err := emby.httpClient.Do(req)
+	defer emby.timeoutHandler()
+	defer resp.Body.Close()
+	if customErr := emby.genericErr(resp.StatusCode, ""); customErr != nil {
+		err = customErr
+	}
+	return resp.StatusCode, err
+}
+
+func embyAddFolder(emby *MediaBrowser, refreshLibrary bool, AddMedia AddMedia) (int, error) {
+	url := fmt.Sprintf("%s/Library/VirtualFolders/Paths?client=emby&refreshLibrary=%t", emby.Server, refreshLibrary)
+	_, status, err := emby.post(url, AddMedia, false)
+	if customErr := emby.genericErr(status, ""); customErr != nil {
+		err = customErr
+	}
+	return status, err
+}
+
+func embyDeleteFolder(emby *MediaBrowser, name string, path string, refreshLibrary bool) (int, error) {
+	url := fmt.Sprintf("%s/Library/VirtualFolders/Paths?name=%s&path=%s&refreshLibrary=%t", emby.Server, name, path, refreshLibrary)
+	req, _ := http.NewRequest("DELETE", url, nil)
+	for name, value := range emby.header {
+		req.Header.Add(name, value)
+	}
+	resp, err := emby.httpClient.Do(req)
+	defer emby.timeoutHandler()
+	defer resp.Body.Close()
+	if customErr := emby.genericErr(resp.StatusCode, ""); customErr != nil {
+		err = customErr
+	}
+	return resp.StatusCode, err
+}
+
+func embyScanLibs(emby *MediaBrowser) (int, error) {
+	url := fmt.Sprintf("%s/Library/Refresh?client=emby", emby.Server)
+	_, status, err := emby.post(url, nil, false)
+	if customErr := emby.genericErr(status, ""); customErr != nil {
+		err = customErr
+	}
+	return status, err
+}

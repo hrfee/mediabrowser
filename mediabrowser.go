@@ -1,4 +1,4 @@
-// Mediabrowser provides user-related bindings to the Jellyfin & Emby APIs.
+// Package mediabrowser provides user-related bindings to the Jellyfin & Emby APIs.
 // Some data aren't bound to structs as jfa-go doesn't need to interact with them, for example DisplayPreferences.
 // See Jellyfin/Emby swagger docs for more info on them.
 package mediabrowser
@@ -54,30 +54,31 @@ type ServerInfo struct {
 
 // MediaBrowser is an api instance of Jellyfin/Emby.
 type MediaBrowser struct {
-	Server         string
-	client         string
-	version        string
-	device         string
-	deviceID       string
-	useragent      string
-	auth           string
-	header         map[string]string
-	ServerInfo     ServerInfo
-	Username       string
-	password       string
-	Authenticated  bool
-	AccessToken    string
-	userID         string
-	httpClient     *http.Client
-	loginParams    map[string]string
-	userCache      []User
-	CacheExpiry    time.Time
-	cacheLength    int
-	noFail         bool
-	Hyphens        bool
-	serverType     serverType
-	timeoutHandler TimeoutHandler
-	Verbose        bool // Jellyfin only, errors will include more info when true
+	Server                          string
+	client                          string
+	version                         string
+	device                          string
+	deviceID                        string
+	useragent                       string
+	auth                            string
+	header                          map[string]string
+	ServerInfo                      ServerInfo
+	Username                        string
+	password                        string
+	Authenticated                   bool
+	AccessToken                     string
+	userID                          string
+	httpClient                      *http.Client
+	loginParams                     map[string]string
+	userCache                       []User
+	libraryCache                    []VirtualFolder
+	CacheExpiry, LibraryCacheExpiry time.Time // first is UserCacheExpiry, keeping name for compatability
+	cacheLength                     int
+	noFail                          bool
+	Hyphens                         bool
+	serverType                      serverType
+	timeoutHandler                  TimeoutHandler
+	Verbose                         bool // Jellyfin only, errors will include more info when true
 }
 
 // NewServer returns a new Mediabrowser object.
@@ -114,7 +115,7 @@ func NewServer(st serverType, server, client, version, device, deviceID string, 
 		json.Unmarshal(data, &mb.ServerInfo)
 	}
 	mb.cacheLength = cacheTimeout
-	mb.CacheExpiry = time.Now()
+	mb.CacheExpiry, mb.LibraryCacheExpiry = time.Now(), time.Now()
 	return mb, nil
 }
 
@@ -333,4 +334,52 @@ func (mb *MediaBrowser) ResetPassword(pin string) (PasswordResetResponse, int, e
 		return PasswordResetResponse{}, -1, nil
 	}
 	return jfResetPassword(mb, pin)
+}
+
+// GetLibraries returns a list of the Libaries (called VirtualFolders) on this node.
+func (mb *MediaBrowser) GetLibraries() ([]VirtualFolder, int, error) {
+	if mb.serverType == JellyfinServer {
+		return jfGetLibraries(mb)
+	}
+	return embyGetLibraries(mb)
+}
+
+// AddLibrary creates a library (VirtualFolder) for this node.
+func (mb *MediaBrowser) AddLibrary(name string, collectionType string, paths []string, refreshLibrary bool, LibraryOptions LibraryOptions) (int, error) {
+	if mb.serverType == JellyfinServer {
+		return jfAddLibrary(mb, name, collectionType, paths, refreshLibrary, LibraryOptions)
+	}
+	return embyAddLibrary(mb, name, collectionType, paths, refreshLibrary, LibraryOptions)
+}
+
+// DeleteLibrary deletes the library (VirtualFolder) corresponding to the provided name.
+func (mb *MediaBrowser) DeleteLibrary(name string) (int, error) {
+	if mb.serverType == JellyfinServer {
+		return jfDeleteLibrary(mb, name)
+	}
+	return embyDeleteLibrary(mb, name)
+}
+
+// AddFolder adds a subfolder to a library (VirtualFolder)
+func (mb *MediaBrowser) AddFolder(refreshLibrary bool, AddMedia AddMedia) (int, error) {
+	if mb.serverType == JellyfinServer {
+		return jfAddFolder(mb, refreshLibrary, AddMedia)
+	}
+	return embyAddFolder(mb, refreshLibrary, AddMedia)
+}
+
+// DeleteFolder deletes the library (VirtualFolder) corresponding to the provided name.
+func (mb *MediaBrowser) DeleteFolder(name string, path string, refreshLibrary bool) (int, error) {
+	if mb.serverType == JellyfinServer {
+		return jfDeleteFolder(mb, name, path, refreshLibrary)
+	}
+	return embyDeleteFolder(mb, name, path, refreshLibrary)
+}
+
+// ScanLibs triggers a scan of all libraries.
+func (mb *MediaBrowser) ScanLibs() (int, error) {
+	if mb.serverType == JellyfinServer {
+		return jfScanLibs(mb)
+	}
+	return embyScanLibs(mb)
 }

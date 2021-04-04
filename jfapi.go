@@ -218,3 +218,90 @@ func jfResetPassword(jf *MediaBrowser, pin string) (PasswordResetResponse, int, 
 	json.Unmarshal([]byte(resp), &recv)
 	return recv, status, err
 }
+
+func jfGetLibraries(jf *MediaBrowser) ([]VirtualFolder, int, error) {
+	var result []VirtualFolder
+	var data string
+	var status int
+	var err error
+	if time.Now().After(jf.LibraryCacheExpiry) {
+		url := fmt.Sprintf("%s/Library/VirtualFolders", jf.Server)
+		data, status, err = jf.get(url, nil)
+		if customErr := jf.genericErr(status, ""); customErr != nil {
+			err = customErr
+		}
+		if err != nil || status != 200 {
+			return nil, status, err
+		}
+		err := json.Unmarshal([]byte(data), &result)
+		if err != nil {
+			return nil, status, err
+		}
+		jf.libraryCache = result
+		jf.LibraryCacheExpiry = time.Now().Add(time.Minute * time.Duration(jf.cacheLength))
+		return result, status, nil
+	}
+	return jf.libraryCache, 200, nil
+}
+
+func jfAddLibrary(jf *MediaBrowser, name string, collectionType string, paths []string, refreshLibrary bool, LibraryOptions LibraryOptions) (int, error) {
+	pathQuery := ""
+	for _, path := range paths {
+		// element is the element from someSlice for where we are
+		pathQuery += fmt.Sprintf("&paths[]=%s", path)
+	}
+	url := fmt.Sprintf("%s/Library/VirtualFolders?client=emby&name=%s&collectiontype=%s&refreshLibrary=%t%s", jf.Server, name, collectionType, refreshLibrary, pathQuery)
+	_, status, err := jf.post(url, LibraryOptions, false)
+	if customErr := jf.genericErr(status, ""); customErr != nil {
+		err = customErr
+	}
+	return status, err
+}
+
+func jfDeleteLibrary(jf *MediaBrowser, name string) (int, error) {
+	url := fmt.Sprintf("%s/Library/VirtualFolders?name=%s", jf.Server, name)
+	req, _ := http.NewRequest("DELETE", url, nil)
+	for name, value := range jf.header {
+		req.Header.Add(name, value)
+	}
+	resp, err := jf.httpClient.Do(req)
+	defer jf.timeoutHandler()
+	defer resp.Body.Close()
+	if customErr := jf.genericErr(resp.StatusCode, ""); customErr != nil {
+		err = customErr
+	}
+	return resp.StatusCode, err
+}
+
+func jfAddFolder(jf *MediaBrowser, refreshLibrary bool, AddMedia AddMedia) (int, error) {
+	url := fmt.Sprintf("%s/Library/VirtualFolders/Paths?client=emby&refreshLibrary=%t", jf.Server, refreshLibrary)
+	_, status, err := jf.post(url, AddMedia, false)
+	if customErr := jf.genericErr(status, ""); customErr != nil {
+		err = customErr
+	}
+	return status, err
+}
+
+func jfDeleteFolder(jf *MediaBrowser, name string, path string, refreshLibrary bool) (int, error) {
+	url := fmt.Sprintf("%s/Library/VirtualFolders/Paths?name=%s&path=%s&refreshLibrary=%t", jf.Server, name, path, refreshLibrary)
+	req, _ := http.NewRequest("DELETE", url, nil)
+	for name, value := range jf.header {
+		req.Header.Add(name, value)
+	}
+	resp, err := jf.httpClient.Do(req)
+	defer jf.timeoutHandler()
+	defer resp.Body.Close()
+	if customErr := jf.genericErr(resp.StatusCode, ""); customErr != nil {
+		err = customErr
+	}
+	return resp.StatusCode, err
+}
+
+func jfScanLibs(jf *MediaBrowser) (int, error) {
+	url := fmt.Sprintf("%s/Library/Refresh?client=emby", jf.Server)
+	_, status, err := jf.post(url, nil, false)
+	if customErr := jf.genericErr(status, ""); customErr != nil {
+		err = customErr
+	}
+	return status, err
+}

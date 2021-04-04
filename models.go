@@ -76,6 +76,7 @@ type Configuration struct {
 	RememberSubtitleSelections bool          `json:"RememberSubtitleSelections"`
 	EnableNextEpisodeAutoPlay  bool          `json:"EnableNextEpisodeAutoPlay"`
 }
+
 type Policy struct {
 	IsAdministrator                  bool          `json:"IsAdministrator"`
 	IsHidden                         bool          `json:"IsHidden"`
@@ -120,4 +121,86 @@ type Policy struct {
 type PasswordResetResponse struct {
 	Success    bool     `json:"Success"`
 	UsersReset []string `json:"UsersReset"`
+}
+
+type VirtualFolder struct {
+	Name               string         `json:"Name"`
+	Locations          []string       `json:"Locations"`
+	CollectionType     string         `json:"CollectionType"`
+	LibraryOptions     LibraryOptions `json:"LibraryOptions"`
+	ItemId             string         `json:"ItemId"`
+	PrimaryImageItemId string         `json:"PrimaryImageItemId"`
+	RefreshProgress    float64        `json:"RefreshProgress"`
+	RefreshStatus      string         `json:"RefreshStatus"`
+}
+
+type LibraryOptions struct {
+	EnablePhotos                            bool          `json:"EnablePhotos"`
+	EnableRealtimeMonitor                   bool          `json:"EnableRealtimeMonitor"`
+	EnableChapterImageExtraction            bool          `json:"EnableChapterImageExtraction"`
+	ExtractChapterImagesDuringLibraryScan   bool          `json:"ExtractChapterImagesDuringLibraryScan"`
+	PathInfos                               []PathInfo    `json:"PathInfos"`
+	SaveLocalMetadata                       bool          `json:"SaveLocalMetadata"`
+	EnableInternetProviders                 bool          `json:"EnableInternetProviders"`
+	EnableAutomaticSeriesGrouping           bool          `json:"EnableAutomaticSeriesGrouping"`
+	EnableEmbeddedTitles                    bool          `json:"EnableEmbeddedTitles"`
+	EnableEmbeddedEpisodeInfos              bool          `json:"EnableEmbeddedEpisodeInfos"`
+	AutomaticRefreshIntervalDays            int           `json:"AutomaticRefreshIntervalDays"`
+	PreferredMetadataLanguage               string        `json:"PreferredMetadataLanguage"`
+	MetadataCountryCode                     string        `json:"MetadataCountryCode"`
+	SeasonZeroDisplayName                   string        `json:"SeasonZeroDisplayName"`
+	MetadataSavers                          []string      `json:"MetadataSavers"`
+	DisabledLocalMetadataReaders            []string      `json:"DisabledLocalMetadataReaders"`
+	LocalMetadataReaderOrder                []string      `json:"LocalMetadataReaderOrder"`
+	DisabledSubtitleFetchers                []string      `json:"DisabledSubtitleFetchers"`
+	SubtitleFetcherOrder                    []string      `json:"SubtitleFetcherOrder"`
+	SkipSubtitlesIfEmbeddedSubtitlesPresent bool          `json:"SkipSubtitlesIfEmbeddedSubtitlesPresent"`
+	SkipSubtitlesIfAudioTrackMatches        bool          `json:"SkipSubtitlesIfAudioTrackMatches"`
+	SubtitleDownloadLanguages               []string      `json:"SubtitleDownloadLanguages"`
+	RequirePerfectSubtitleMatch             bool          `json:"RequirePerfectSubtitleMatch"`
+	SaveSubtitlesWithMedia                  bool          `json:"SaveSubtitlesWithMedia"`
+	TypeOptions                             []TypeOptions `json:"TypeOptions"`
+	CollapseSingleItemFolders               bool          `json:"CollapseSingleItemFolders"`
+	MinResumePct                            int           `json:"MinResumePct"`
+	MaxResumePct                            int           `json:"MaxResumePct"`
+	MinResumeDurationSeconds                int           `json:"MinResumeDurationSeconds"`
+	ThumbnailImagesIntervalSeconds          int           `json:"ThumbnailImagesIntervalSeconds"`
+}
+
+type PathInfo struct {
+	Path        string `json:"Path"`
+	NetworkPath string `json:"NetworkPath"`
+}
+
+type TypeOptions struct {
+	Type                 string         `json:"Type"`
+	MetadataFetchers     []string       `json:"MetadataFetchers"`
+	MetadataFetcherOrder []string       `json:"MetadataFetcherOrder"`
+	ImageFetchers        []string       `json:"ImageFetchers"`
+	ImageFetcherOrder    []string       `json:"ImageFetcherOrder"`
+	ImageOptions         []ImageOptions `json:"ImageOptions"`
+}
+
+type ImageOptions struct {
+	Type     string `json:"Type"`
+	Limit    int    `json:"Limit"`
+	MinWidth int    `json:"MinWidth"`
+}
+
+// type MediaFolder struct {
+// 	Name       string    `json:"Name"`
+// 	Id         string    `json:"Id"`
+// 	SubFolders SubFolder `json:"SubFolders"`
+// }
+
+type SubFolder struct {
+	Name string `json:"Name"`
+	Id   string `json:"Id"`
+	Path string `json:"Path"`
+}
+
+type AddMedia struct {
+	Name     string   `json:"Name"`
+	Path     string   `json:"Path"`
+	PathInfo PathInfo `json:"PathInfo"`
 }
