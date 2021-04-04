@@ -270,14 +270,6 @@ func (mb *MediaBrowser) GetUsers(public bool) ([]User, int, error) {
 	return embyGetUsers(mb, public)
 }
 
-// UserByName returns the user corresponding to the provided username.
-func (mb *MediaBrowser) UserByName(username string, public bool) (User, int, error) {
-	if mb.serverType == JellyfinServer {
-		return jfUserByName(mb, username, public)
-	}
-	return embyUserByName(mb, username, public)
-}
-
 // UserByID returns the user corresponding to the provided ID.
 func (mb *MediaBrowser) UserByID(userID string, public bool) (User, int, error) {
 	if mb.serverType == JellyfinServer {
@@ -294,38 +286,6 @@ func (mb *MediaBrowser) NewUser(username, password string) (User, int, error) {
 	return embyNewUser(mb, username, password)
 }
 
-// SetPolicy sets the access policy for the user corresponding to the provided ID.
-func (mb *MediaBrowser) SetPolicy(userID string, policy Policy) (int, error) {
-	if mb.serverType == JellyfinServer {
-		return jfSetPolicy(mb, userID, policy)
-	}
-	return embySetPolicy(mb, userID, policy)
-}
-
-// SetConfiguration sets the configuration (part of homescreen layout) for the user corresponding to the provided ID.
-func (mb *MediaBrowser) SetConfiguration(userID string, configuration Configuration) (int, error) {
-	if mb.serverType == JellyfinServer {
-		return jfSetConfiguration(mb, userID, configuration)
-	}
-	return embySetConfiguration(mb, userID, configuration)
-}
-
-// GetDisplayPreferences gets the displayPreferences (part of homescreen layout) for the user corresponding to the provided ID.
-func (mb *MediaBrowser) GetDisplayPreferences(userID string) (map[string]interface{}, int, error) {
-	if mb.serverType == JellyfinServer {
-		return jfGetDisplayPreferences(mb, userID)
-	}
-	return embyGetDisplayPreferences(mb, userID)
-}
-
-// SetDisplayPreferences sets the displayPreferences (part of homescreen layout) for the user corresponding to the provided ID.
-func (mb *MediaBrowser) SetDisplayPreferences(userID string, displayprefs map[string]interface{}) (int, error) {
-	if mb.serverType == JellyfinServer {
-		return jfSetDisplayPreferences(mb, userID, displayprefs)
-	}
-	return embySetDisplayPreferences(mb, userID, displayprefs)
-}
-
 // ResetPassword resets a user's password by setting it to the given PIN,
 // which is generated when a user attempts to reset on the login page.
 // Only supported on Jellyfin, will return (PasswordResetResponse, -1, nil) on Emby.
@@ -334,52 +294,4 @@ func (mb *MediaBrowser) ResetPassword(pin string) (PasswordResetResponse, int, e
 		return PasswordResetResponse{}, -1, nil
 	}
 	return jfResetPassword(mb, pin)
-}
-
-// GetLibraries returns a list of the Libaries (called VirtualFolders) on this node.
-func (mb *MediaBrowser) GetLibraries() ([]VirtualFolder, int, error) {
-	if mb.serverType == JellyfinServer {
-		return jfGetLibraries(mb)
-	}
-	return embyGetLibraries(mb)
-}
-
-// AddLibrary creates a library (VirtualFolder) for this node.
-func (mb *MediaBrowser) AddLibrary(name string, collectionType string, paths []string, refreshLibrary bool, LibraryOptions LibraryOptions) (int, error) {
-	if mb.serverType == JellyfinServer {
-		return jfAddLibrary(mb, name, collectionType, paths, refreshLibrary, LibraryOptions)
-	}
-	return embyAddLibrary(mb, name, collectionType, paths, refreshLibrary, LibraryOptions)
-}
-
-// DeleteLibrary deletes the library (VirtualFolder) corresponding to the provided name.
-func (mb *MediaBrowser) DeleteLibrary(name string) (int, error) {
-	if mb.serverType == JellyfinServer {
-		return jfDeleteLibrary(mb, name)
-	}
-	return embyDeleteLibrary(mb, name)
-}
-
-// AddFolder adds a subfolder to a library (VirtualFolder)
-func (mb *MediaBrowser) AddFolder(refreshLibrary bool, AddMedia AddMedia) (int, error) {
-	if mb.serverType == JellyfinServer {
-		return jfAddFolder(mb, refreshLibrary, AddMedia)
-	}
-	return embyAddFolder(mb, refreshLibrary, AddMedia)
-}
-
-// DeleteFolder deletes the library (VirtualFolder) corresponding to the provided name.
-func (mb *MediaBrowser) DeleteFolder(name string, path string, refreshLibrary bool) (int, error) {
-	if mb.serverType == JellyfinServer {
-		return jfDeleteFolder(mb, name, path, refreshLibrary)
-	}
-	return embyDeleteFolder(mb, name, path, refreshLibrary)
-}
-
-// ScanLibs triggers a scan of all libraries.
-func (mb *MediaBrowser) ScanLibs() (int, error) {
-	if mb.serverType == JellyfinServer {
-		return jfScanLibs(mb)
-	}
-	return embyScanLibs(mb)
 }
