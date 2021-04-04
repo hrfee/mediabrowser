@@ -1,5 +1,7 @@
 # mediabrowser
 
+[![GoDoc](https://godoc.org/github.com/hrfee/mediabrowser?status.svg)](https://godoc.org/github.com/hrfee/mediabrowser)
+
 a limited API client for Jellyfin/Emby, with a focus on User management as used in [jfa-go](https://github.com/hrfee/jfa-go).
 
 ```

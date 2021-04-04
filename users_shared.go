@@ -32,6 +32,7 @@ func (mb *MediaBrowser) UserByName(username string, public bool) (User, int, err
 }
 
 // SetPolicy sets the access policy for the user corresponding to the provided ID.
+// No GetPolicy is provided because a User object includes Policy already.
 func (mb *MediaBrowser) SetPolicy(userID string, policy Policy) (int, error) {
 	url := fmt.Sprintf("%s/Users/%s/Policy", mb.Server, userID)
 	data, status, err := mb.post(url, policy, true)
@@ -47,6 +48,7 @@ func (mb *MediaBrowser) SetPolicy(userID string, policy Policy) (int, error) {
 }
 
 // SetConfiguration sets the configuration (part of homescreen layout) for the user corresponding to the provided ID.
+// No GetConfiguration is provided because a User object includes Configuration already.
 func (mb *MediaBrowser) SetConfiguration(userID string, configuration Configuration) (int, error) {
 	url := fmt.Sprintf("%s/Users/%s/Configuration", mb.Server, userID)
 	data, status, err := mb.post(url, configuration, true)
