@@ -77,6 +77,7 @@ type Configuration struct {
 	EnableNextEpisodeAutoPlay  bool          `json:"EnableNextEpisodeAutoPlay"`
 }
 
+// Policy stores a users permissions.
 type Policy struct {
 	IsAdministrator                  bool          `json:"IsAdministrator"`
 	IsHidden                         bool          `json:"IsHidden"`
@@ -94,7 +95,6 @@ type Policy struct {
 	EnableAudioPlaybackTranscoding   bool          `json:"EnableAudioPlaybackTranscoding"`
 	EnableVideoPlaybackTranscoding   bool          `json:"EnableVideoPlaybackTranscoding"`
 	EnablePlaybackRemuxing           bool          `json:"EnablePlaybackRemuxing"`
-	ForceRemoteSourceTranscoding     bool          `json:"ForceRemoteSourceTranscoding"`
 	EnableContentDeletion            bool          `json:"EnableContentDeletion"`
 	EnableContentDeletionFromFolders []interface{} `json:"EnableContentDeletionFromFolders"`
 	EnableContentDownloading         bool          `json:"EnableContentDownloading"`
@@ -107,15 +107,24 @@ type Policy struct {
 	EnabledFolders                   []string      `json:"EnabledFolders"`
 	EnableAllFolders                 bool          `json:"EnableAllFolders"`
 	InvalidLoginAttemptCount         int           `json:"InvalidLoginAttemptCount"`
-	LoginAttemptsBeforeLockout       int           `json:"LoginAttemptsBeforeLockout"`
-	MaxActiveSessions                int           `json:"MaxActiveSessions"`
 	EnablePublicSharing              bool          `json:"EnablePublicSharing"`
-	BlockedMediaFolders              []interface{} `json:"BlockedMediaFolders"`
-	BlockedChannels                  []interface{} `json:"BlockedChannels"`
 	RemoteClientBitrateLimit         int           `json:"RemoteClientBitrateLimit"`
 	AuthenticationProviderID         string        `json:"AuthenticationProviderId"`
-	PasswordResetProviderID          string        `json:"PasswordResetProviderId"`
-	SyncPlayAccess                   string        `json:"SyncPlayAccess"`
+	// Jellyfin Only
+	ForceRemoteSourceTranscoding bool          `json:"ForceRemoteSourceTranscoding"`
+	LoginAttemptsBeforeLockout   int           `json:"LoginAttemptsBeforeLockout"`
+	MaxActiveSessions            int           `json:"MaxActiveSessions"`
+	BlockedMediaFolders          []interface{} `json:"BlockedMediaFolders"`
+	BlockedChannels              []interface{} `json:"BlockedChannels"`
+	PasswordResetProviderID      string        `json:"PasswordResetProviderId"`
+	SyncPlayAccess               string        `json:"SyncPlayAccess"`
+	// Emby Only
+	IsHiddenRemotely           bool          `json:"IsHiddenRemotely"`
+	IsTagBlockingModeInclusive bool          `json:"IsTagBlockingModeInclusive"`
+	EnableSubtitleDownloading  bool          `json:"EnableSubtitleDownloading"`
+	EnableSubtitleManagement   bool          `json:"EnableSubtitleManagement"`
+	ExcludedSubFolders         []interface{} `json:"ExcludedSubFolders"`
+	SimultaneousStreamLimit    string        `json:"SimultaneousStreamLimit"`
 }
 
 type PasswordResetResponse struct {
