@@ -87,6 +87,7 @@ type Policy struct {
 	SyncPlayAccess               string        `json:"SyncPlayAccess"`
 	// Emby Only
 	IsHiddenRemotely           bool          `json:"IsHiddenRemotely"`
+	IsHiddenFromUnusedDevices  bool          `json:"IsHiddenFromUnusedDevices"`
 	IsTagBlockingModeInclusive bool          `json:"IsTagBlockingModeInclusive"`
 	EnableSubtitleDownloading  bool          `json:"EnableSubtitleDownloading"`
 	EnableSubtitleManagement   bool          `json:"EnableSubtitleManagement"`
