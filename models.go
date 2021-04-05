@@ -124,7 +124,7 @@ type Policy struct {
 	EnableSubtitleDownloading  bool          `json:"EnableSubtitleDownloading"`
 	EnableSubtitleManagement   bool          `json:"EnableSubtitleManagement"`
 	ExcludedSubFolders         []interface{} `json:"ExcludedSubFolders"`
-	SimultaneousStreamLimit    string        `json:"SimultaneousStreamLimit"`
+	SimultaneousStreamLimit    int           `json:"SimultaneousStreamLimit"`
 }
 
 type PasswordResetResponse struct {
