@@ -262,7 +262,7 @@ func (mb *MediaBrowser) DeleteUser(userID string) (int, error) {
 	return embyDeleteUser(mb, userID)
 }
 
-// GetUsers returns all (visible) users on the Emby instance.
+// GetUsers returns all (visible) users on the instance. If public, no authentication is needed but hidden users will not be visible.
 func (mb *MediaBrowser) GetUsers(public bool) ([]User, int, error) {
 	if mb.serverType == JellyfinServer {
 		return jfGetUsers(mb, public)

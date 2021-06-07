@@ -100,6 +100,13 @@ type PasswordResetResponse struct {
 	UsersReset []string `json:"UsersReset"`
 }
 
+type setPasswordRequest struct {
+	Current       string `json:"CurrentPassword"`
+	CurrentPw     string `json:"CurrentPw"`
+	New           string `json:"NewPw"`
+	ResetPassword bool   `json:"ResetPassword"`
+}
+
 type VirtualFolder struct {
 	Name               string         `json:"Name"`
 	Locations          []string       `json:"Locations"`

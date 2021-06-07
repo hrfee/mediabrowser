@@ -62,3 +62,6 @@ func main() {
 	log.Printf("User %s was last active %v", user.Name, user.LastActivityDate)
 }
 ```
+
+## Contributions
+Contributions are welcome, and don't have to be user related. Try to group related functions into files named `<category>_<emby/jf/shared>.go`. If functions are shared between jellyfin & emby, add a wrapper function to `mediabrowser.go`.

@@ -88,3 +88,14 @@ func (mb *MediaBrowser) SetDisplayPreferences(userID string, displayprefs map[st
 	}
 	return status, nil
 }
+
+func (mb *MediaBrowser) SetPassword(userID, currentPw, newPw string) (int, error) {
+	url := fmt.Sprintf("%s/Users/%s/Password", mb.Server, userID)
+	_, status, err := mb.post(url, setPasswordRequest{
+		Current:       currentPw,
+		CurrentPw:     currentPw,
+		New:           newPw,
+		ResetPassword: false,
+	}, false)
+	return status, err
+}
