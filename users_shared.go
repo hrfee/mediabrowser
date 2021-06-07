@@ -89,6 +89,7 @@ func (mb *MediaBrowser) SetDisplayPreferences(userID string, displayprefs map[st
 	return status, nil
 }
 
+// SetPassword sets the password for a user given a userID, the old password, and the new one. Requires admin authentication or authentication as the target user.
 func (mb *MediaBrowser) SetPassword(userID, currentPw, newPw string) (int, error) {
 	url := fmt.Sprintf("%s/Users/%s/Password", mb.Server, userID)
 	_, status, err := mb.post(url, setPasswordRequest{
