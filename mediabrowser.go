@@ -106,7 +106,10 @@ func NewServer(st serverType, server, client, version, device, deviceID string, 
 		Timeout: 10 * time.Second,
 	}
 	infoURL := fmt.Sprintf("%s/System/Info/Public", server)
-	req, _ := http.NewRequest("GET", infoURL, nil)
+	req, err := http.NewRequest("GET", infoURL, nil)
+	if err != nil {
+		return nil, err
+	}
 	resp, err := mb.httpClient.Do(req)
 	defer mb.timeoutHandler()
 	defer resp.Body.Close()
