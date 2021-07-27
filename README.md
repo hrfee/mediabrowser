@@ -64,4 +64,4 @@ func main() {
 ```
 
 ## Contributions
-Contributions are welcome, and don't have to be user related. Try to group related functions into files named `<category>_<emby/jf/shared>.go`. If functions are shared between jellyfin & emby, add a wrapper function to `mediabrowser.go`.
+Contributions are welcome, and don't have to be user related. Try to group related functions into files named `<category>_<emby/jf/shared>.go`. If functions aren't shared between jellyfin & emby, write them as normal functions and add a wrapper receiver method to `mediabrowser.go`.
