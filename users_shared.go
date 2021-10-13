@@ -100,3 +100,12 @@ func (mb *MediaBrowser) SetPassword(userID, currentPw, newPw string) (int, error
 	}, false)
 	return status, err
 }
+
+// ResetPasswordAdmin resets the given user ID's password, allowing one to then change it without knowing the previous password.
+func (mb *MediaBrowser) ResetPasswordAdmin(userID string) (int, error) {
+	url := fmt.Sprintf("%s/Users/%s/Password", mb.Server, userID)
+	_, status, err := mb.post(url, map[string]bool{
+		"ResetPassword": true,
+	}, false)
+	return status, err
+}
