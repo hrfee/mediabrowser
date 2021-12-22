@@ -26,7 +26,7 @@ type TimeoutHandler func()
 func NewNamedTimeoutHandler(name, addr string, noFail bool) TimeoutHandler {
 	return func() {
 		if r := recover(); r != nil {
-			out := fmt.Sprintf("Failed to authenticate with %s @ %s: Timed out", name, addr)
+			out := fmt.Sprintf("Failed to authenticate with %s @ %s: %v", name, addr, r)
 			if noFail {
 				log.Print(out)
 			} else {
