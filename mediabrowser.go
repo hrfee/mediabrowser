@@ -112,8 +112,8 @@ func NewServer(st serverType, server, client, version, device, deviceID string, 
 	}
 	resp, err := mb.httpClient.Do(req)
 	defer mb.timeoutHandler()
-	defer resp.Body.Close()
 	if err == nil {
+		defer resp.Body.Close()
 		data, _ := ioutil.ReadAll(resp.Body)
 		json.Unmarshal(data, &mb.ServerInfo)
 	}
@@ -220,14 +220,16 @@ func (mb *MediaBrowser) Authenticate(username, password string) (User, int, erro
 		req.Header.Add(name, value)
 	}
 	resp, err := mb.httpClient.Do(req)
+	if err != nil {
+		return User{}, 0, err
+	} else if resp.StatusCode != 200 {
+		return User{}, resp.StatusCode, err
+	}
 	// Jellyfin likes to return 400 for a lot of things, even if the api docs don't say so.
 	if resp.StatusCode == 400 {
 		err = ErrUnauthorized{}
 	} else if customErr := mb.genericErr(resp.StatusCode, ""); customErr != nil {
 		err = customErr
-	}
-	if err != nil || resp.StatusCode != 200 {
-		return User{}, resp.StatusCode, err
 	}
 	defer resp.Body.Close()
 	var d io.Reader
