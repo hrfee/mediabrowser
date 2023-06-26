@@ -41,6 +41,7 @@ func (mb *MediaBrowser) AddLibrary(name string, collectionType string, paths []s
 		pathQuery += fmt.Sprintf("&paths[]=%s", path)
 	}
 	url := fmt.Sprintf("%s/Library/VirtualFolders?client=emby&name=%s&collectiontype=%s&refreshLibrary=%t%s", mb.Server, name, collectionType, refreshLibrary, pathQuery)
+	DeNullLibraryOptions(&LibraryOptions)
 	_, status, err := mb.post(url, LibraryOptions, false)
 	if customErr := mb.genericErr(status, ""); customErr != nil {
 		err = customErr
