@@ -168,6 +168,7 @@ func (mb *MediaBrowser) get(url string, params map[string]string) (string, int, 
 
 func (mb *MediaBrowser) post(url string, data interface{}, response bool) (string, int, error) {
 	params, _ := json.Marshal(data)
+	// fmt.Printf("Data: %s\n", string(params))
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(params))
 	for name, value := range mb.header {
 		req.Header.Add(name, value)

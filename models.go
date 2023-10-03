@@ -31,17 +31,34 @@ type Configuration struct {
 	PlayDefaultAudioTrack      bool          `json:"PlayDefaultAudioTrack"`
 	SubtitleLanguagePreference string        `json:"SubtitleLanguagePreference"`
 	DisplayMissingEpisodes     bool          `json:"DisplayMissingEpisodes"`
-	GroupedFolders             []interface{} `json:"GroupedFolders"`
+	GroupedFolders             []interface{} `json:"GroupedFolders,omitempty"`
 	SubtitleMode               string        `json:"SubtitleMode"`
 	DisplayCollectionsView     bool          `json:"DisplayCollectionsView"`
 	EnableLocalPassword        bool          `json:"EnableLocalPassword"`
-	OrderedViews               []interface{} `json:"OrderedViews"`
-	LatestItemsExcludes        []interface{} `json:"LatestItemsExcludes"`
-	MyMediaExcludes            []interface{} `json:"MyMediaExcludes"`
+	OrderedViews               []interface{} `json:"OrderedViews,omitempty"`
+	LatestItemsExcludes        []interface{} `json:"LatestItemsExcludes,omitempty"`
+	MyMediaExcludes            []interface{} `json:"MyMediaExcludes,omitempty"`
 	HidePlayedInLatest         bool          `json:"HidePlayedInLatest"`
 	RememberAudioSelections    bool          `json:"RememberAudioSelections"`
 	RememberSubtitleSelections bool          `json:"RememberSubtitleSelections"`
 	EnableNextEpisodeAutoPlay  bool          `json:"EnableNextEpisodeAutoPlay"`
+}
+
+// DeNullConfiguration ensures there are no "null" fields in the given Configuration.
+// Jellyfin isn't a fan of null.
+func DeNullConfiguration(c *Configuration) {
+	if c.GroupedFolders == nil {
+		c.GroupedFolders = []interface{}{}
+	}
+	if c.OrderedViews == nil {
+		c.OrderedViews = []interface{}{}
+	}
+	if c.LatestItemsExcludes == nil {
+		c.LatestItemsExcludes = []interface{}{}
+	}
+	if c.MyMediaExcludes == nil {
+		c.MyMediaExcludes = []interface{}{}
+	}
 }
 
 // Policy stores a users permissions.
@@ -49,10 +66,10 @@ type Policy struct {
 	IsAdministrator                  bool          `json:"IsAdministrator"`
 	IsHidden                         bool          `json:"IsHidden"`
 	IsDisabled                       bool          `json:"IsDisabled"`
-	BlockedTags                      []interface{} `json:"BlockedTags"`
+	BlockedTags                      []interface{} `json:"BlockedTags,omitempty"`
 	EnableUserPreferenceAccess       bool          `json:"EnableUserPreferenceAccess"`
-	AccessSchedules                  []interface{} `json:"AccessSchedules"`
-	BlockUnratedItems                []interface{} `json:"BlockUnratedItems"`
+	AccessSchedules                  []interface{} `json:"AccessSchedules,omitempty"`
+	BlockUnratedItems                []interface{} `json:"BlockUnratedItems,omitempty"`
 	EnableRemoteControlOfOtherUsers  bool          `json:"EnableRemoteControlOfOtherUsers"`
 	EnableSharedDeviceControl        bool          `json:"EnableSharedDeviceControl"`
 	EnableRemoteAccess               bool          `json:"EnableRemoteAccess"`
@@ -63,13 +80,13 @@ type Policy struct {
 	EnableVideoPlaybackTranscoding   bool          `json:"EnableVideoPlaybackTranscoding"`
 	EnablePlaybackRemuxing           bool          `json:"EnablePlaybackRemuxing"`
 	EnableContentDeletion            bool          `json:"EnableContentDeletion"`
-	EnableContentDeletionFromFolders []interface{} `json:"EnableContentDeletionFromFolders"`
+	EnableContentDeletionFromFolders []interface{} `json:"EnableContentDeletionFromFolders,omitempty"`
 	EnableContentDownloading         bool          `json:"EnableContentDownloading"`
 	EnableSyncTranscoding            bool          `json:"EnableSyncTranscoding"`
 	EnableMediaConversion            bool          `json:"EnableMediaConversion"`
-	EnabledDevices                   []interface{} `json:"EnabledDevices"`
+	EnabledDevices                   []interface{} `json:"EnabledDevices,omitempty"`
 	EnableAllDevices                 bool          `json:"EnableAllDevices"`
-	EnabledChannels                  []interface{} `json:"EnabledChannels"`
+	EnabledChannels                  []interface{} `json:"EnabledChannels,omitempty"`
 	EnableAllChannels                bool          `json:"EnableAllChannels"`
 	EnabledFolders                   []string      `json:"EnabledFolders"`
 	EnableAllFolders                 bool          `json:"EnableAllFolders"`
@@ -81,8 +98,8 @@ type Policy struct {
 	ForceRemoteSourceTranscoding bool          `json:"ForceRemoteSourceTranscoding"`
 	LoginAttemptsBeforeLockout   int           `json:"LoginAttemptsBeforeLockout"`
 	MaxActiveSessions            int           `json:"MaxActiveSessions"`
-	BlockedMediaFolders          []interface{} `json:"BlockedMediaFolders"`
-	BlockedChannels              []interface{} `json:"BlockedChannels"`
+	BlockedMediaFolders          []interface{} `json:"BlockedMediaFolders,omitempty"`
+	BlockedChannels              []interface{} `json:"BlockedChannels,omitempty"`
 	PasswordResetProviderID      string        `json:"PasswordResetProviderId"`
 	SyncPlayAccess               string        `json:"SyncPlayAccess"`
 	// Emby Only
@@ -91,8 +108,43 @@ type Policy struct {
 	IsTagBlockingModeInclusive bool          `json:"IsTagBlockingModeInclusive"`
 	EnableSubtitleDownloading  bool          `json:"EnableSubtitleDownloading"`
 	EnableSubtitleManagement   bool          `json:"EnableSubtitleManagement"`
-	ExcludedSubFolders         []interface{} `json:"ExcludedSubFolders"`
+	ExcludedSubFolders         []interface{} `json:"ExcludedSubFolders,omitempty"`
 	SimultaneousStreamLimit    int           `json:"SimultaneousStreamLimit"`
+}
+
+// DeNullPolicy ensures there are no "null" fields in the given Policy.
+// Jellyfin isn't a fan of null.
+func DeNullPolicy(p *Policy) {
+	if p.BlockedTags == nil {
+		p.BlockedTags = []interface{}{}
+	}
+	if p.AccessSchedules == nil {
+		p.AccessSchedules = []interface{}{}
+	}
+	if p.BlockUnratedItems == nil {
+		p.BlockUnratedItems = []interface{}{}
+	}
+	if p.EnableContentDeletionFromFolders == nil {
+		p.EnableContentDeletionFromFolders = []interface{}{}
+	}
+	if p.EnabledDevices == nil {
+		p.EnabledDevices = []interface{}{}
+	}
+	if p.EnabledChannels == nil {
+		p.EnabledChannels = []interface{}{}
+	}
+	if p.BlockedMediaFolders == nil {
+		p.BlockedMediaFolders = []interface{}{}
+	}
+	if p.BlockedChannels == nil {
+		p.BlockedChannels = []interface{}{}
+	}
+	if p.ExcludedSubFolders == nil {
+		p.ExcludedSubFolders = []interface{}{}
+	}
+	if p.EnabledFolders == nil {
+		p.EnabledFolders = []string{}
+	}
 }
 
 type PasswordResetResponse struct {
@@ -116,6 +168,17 @@ type VirtualFolder struct {
 	PrimaryImageItemId string         `json:"PrimaryImageItemId"`
 	RefreshProgress    float64        `json:"RefreshProgress"`
 	RefreshStatus      string         `json:"RefreshStatus"`
+}
+
+// DeNullVirtualFolder ensures there are no "null" fields in the given VirtualFolder.
+// Jellyfin isn't a fan of null.
+func DeNullVirtualFolder(vf *VirtualFolder) {
+	if vf.Locations == nil {
+		vf.Locations = []string{}
+	}
+	lo := vf.LibraryOptions
+	DeNullLibraryOptions(&lo)
+	vf.LibraryOptions = lo
 }
 
 type LibraryOptions struct {
@@ -149,6 +212,35 @@ type LibraryOptions struct {
 	MaxResumePct                            int           `json:"MaxResumePct"`
 	MinResumeDurationSeconds                int           `json:"MinResumeDurationSeconds"`
 	ThumbnailImagesIntervalSeconds          int           `json:"ThumbnailImagesIntervalSeconds"`
+}
+
+// DeNullLibraryOptions ensures there are no "null" fields in the given LibraryOptions.
+// Jellyfin isn't a fan of null.
+func DeNullLibraryOptions(lo *LibraryOptions) {
+	if lo.PathInfos == nil {
+		lo.PathInfos = []PathInfo{}
+	}
+	if lo.MetadataSavers == nil {
+		lo.MetadataSavers = []string{}
+	}
+	if lo.DisabledLocalMetadataReaders == nil {
+		lo.DisabledLocalMetadataReaders = []string{}
+	}
+	if lo.LocalMetadataReaderOrder == nil {
+		lo.LocalMetadataReaderOrder = []string{}
+	}
+	if lo.DisabledSubtitleFetchers == nil {
+		lo.DisabledSubtitleFetchers = []string{}
+	}
+	if lo.SubtitleFetcherOrder == nil {
+		lo.SubtitleFetcherOrder = []string{}
+	}
+	if lo.SubtitleDownloadLanguages == nil {
+		lo.SubtitleDownloadLanguages = []string{}
+	}
+	if lo.TypeOptions == nil {
+		lo.TypeOptions = []TypeOptions{}
+	}
 }
 
 type PathInfo struct {
