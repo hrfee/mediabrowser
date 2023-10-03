@@ -259,6 +259,28 @@ func (mb *MediaBrowser) Authenticate(username, password string) (User, int, erro
 	return user, resp.StatusCode, nil
 }
 
+// MustAuthenticateOptions is used to control the behaviour of the MustAuthenticate method.
+type MustAuthenticateOptions struct {
+	RetryCount  int           // Number of Retries before failure.
+	RetryGap    time.Duration // Duration to wait between tries.
+	LogFailures bool          // Whether or not to print failures to the log.
+}
+
+// MustAuthenticate attempts to authenticate using a username & password, with configurable retries in the event of failure.
+func (mb *MediaBrowser) MustAuthenticate(username, password string, opts MustAuthenticateOptions) (user User, status int, err error) {
+	for i := 0; i < opts.RetryCount; i++ {
+		user, status, err = mb.Authenticate(username, password)
+		if status == 200 && err == nil {
+			return
+		}
+		if opts.LogFailures {
+			log.Printf("Failed to authenticate on attempt %d, retrying in %s...\n", i+1, opts.RetryGap)
+		}
+		time.Sleep(opts.RetryGap)
+	}
+	return
+}
+
 // DeleteUser deletes the user corresponding to the provided ID.
 func (mb *MediaBrowser) DeleteUser(userID string) (int, error) {
 	if mb.serverType == JellyfinServer {
