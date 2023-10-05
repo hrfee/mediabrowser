@@ -122,6 +122,11 @@ func NewServer(st serverType, server, client, version, device, deviceID string, 
 	return mb, nil
 }
 
+// SetTransport sets the HTTP transport to be used for all requests. Can be used to set a proxy.
+func (mb *MediaBrowser) SetTransport(t *http.Transport) {
+	mb.httpClient.Transport = t
+}
+
 func bodyToString(resp *http.Response) string {
 	var data io.Reader
 	encoding := resp.Header.Get("Content-Encoding")
