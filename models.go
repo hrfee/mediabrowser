@@ -42,6 +42,7 @@ type Configuration struct {
 	RememberAudioSelections    bool          `json:"RememberAudioSelections"`
 	RememberSubtitleSelections bool          `json:"RememberSubtitleSelections"`
 	EnableNextEpisodeAutoPlay  bool          `json:"EnableNextEpisodeAutoPlay"`
+	CastReceiverID             string        `json:"CastReceiverId"`
 }
 
 // DeNullConfiguration ensures there are no "null" fields in the given Configuration.
