@@ -67,6 +67,7 @@ type Policy struct {
 	IsHidden                         bool          `json:"IsHidden"`
 	IsDisabled                       bool          `json:"IsDisabled"`
 	BlockedTags                      []interface{} `json:"BlockedTags,omitempty"`
+	AllowedTags                      []interface{} `json:"AllowedTags"`
 	EnableUserPreferenceAccess       bool          `json:"EnableUserPreferenceAccess"`
 	AccessSchedules                  []interface{} `json:"AccessSchedules,omitempty"`
 	BlockUnratedItems                []interface{} `json:"BlockUnratedItems,omitempty"`
@@ -94,6 +95,11 @@ type Policy struct {
 	EnablePublicSharing              bool          `json:"EnablePublicSharing"`
 	RemoteClientBitrateLimit         int           `json:"RemoteClientBitrateLimit"`
 	AuthenticationProviderID         string        `json:"AuthenticationProviderId"`
+
+	EnableCollectionManagement bool `json:"EnableCollectionManagement"`
+	EnableSubtitleManagement   bool `json:"EnableSubtitleManagement"`
+	EnableLyricManagement      bool `json:"EnableLyricManagement"`
+
 	// Jellyfin Only
 	ForceRemoteSourceTranscoding bool          `json:"ForceRemoteSourceTranscoding"`
 	LoginAttemptsBeforeLockout   int           `json:"LoginAttemptsBeforeLockout"`
@@ -107,7 +113,6 @@ type Policy struct {
 	IsHiddenFromUnusedDevices  bool          `json:"IsHiddenFromUnusedDevices"`
 	IsTagBlockingModeInclusive bool          `json:"IsTagBlockingModeInclusive"`
 	EnableSubtitleDownloading  bool          `json:"EnableSubtitleDownloading"`
-	EnableSubtitleManagement   bool          `json:"EnableSubtitleManagement"`
 	ExcludedSubFolders         []interface{} `json:"ExcludedSubFolders,omitempty"`
 	SimultaneousStreamLimit    int           `json:"SimultaneousStreamLimit"`
 }
@@ -117,6 +122,9 @@ type Policy struct {
 func DeNullPolicy(p *Policy) {
 	if p.BlockedTags == nil {
 		p.BlockedTags = []interface{}{}
+	}
+	if p.AllowedTags == nil {
+		p.AllowedTags = []interface{}{}
 	}
 	if p.AccessSchedules == nil {
 		p.AccessSchedules = []interface{}{}
