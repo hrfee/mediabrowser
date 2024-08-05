@@ -5,11 +5,13 @@ package mediabrowser
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 )
 
 // UserByName returns the user corresponding to the provided username.
 func (mb *MediaBrowser) UserByName(username string, public bool) (User, int, error) {
+	username = strings.ToLower(username)
 	var match User
 	find := func() (User, int, error) {
 		users, status, err := mb.GetUsers(public)
@@ -17,7 +19,7 @@ func (mb *MediaBrowser) UserByName(username string, public bool) (User, int, err
 			return User{}, status, err
 		}
 		for _, user := range users {
-			if user.Name == username {
+			if strings.ToLower(user.Name) == username {
 				return user, status, err
 			}
 		}
