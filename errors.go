@@ -3,6 +3,7 @@ package mediabrowser
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 )
 
 // most 404 errors are from UserNotFound, so this generic error doesn't really need any detail.
@@ -25,7 +26,7 @@ type ErrForbidden struct {
 }
 
 func (err ErrForbidden) Error() string {
-	msg := "Forbidden, the user may not have the correct permissions."
+	msg := "forbidden, the user may not have the correct permissions."
 	if err.verbose {
 		msg += "\n" + err.Details()
 	}
@@ -36,14 +37,33 @@ var (
 	NotFound ErrNotFound = errors.New("Resource not found.")
 )
 
+type ErrUnknown struct {
+	code int
+	DetailedError
+}
+
+func (err ErrUnknown) Error() string {
+	msg := fmt.Sprintf("failed (code %d)", err.code)
+	if err.verbose {
+		msg += "\n" + err.Details()
+	}
+	return msg
+}
+
 func (mb *MediaBrowser) genericErr(status int, data string) (err error) {
 	switch status {
+	case 200, 204, 201:
+		err = nil
+		return
 	case 401, 400:
 		err = ErrUnauthorized{}
 	case 404:
-		return NotFound
+		err = NotFound
+		return
 	case 403:
 		err = ErrForbidden{}
+	default:
+		err = ErrUnknown{code: status}
 	}
 	if mb.Verbose && data != "" {
 		json.Unmarshal([]byte(data), &err)

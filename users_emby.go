@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func embyDeleteUser(emby *MediaBrowser, userID string) (int, error) {
+func embyDeleteUser(emby *MediaBrowser, userID string) error {
 	url := fmt.Sprintf("%s/Users/%s", emby.Server, userID)
 	req, _ := http.NewRequest("DELETE", url, nil)
 	for name, value := range emby.header {
@@ -23,10 +23,10 @@ func embyDeleteUser(emby *MediaBrowser, userID string) (int, error) {
 	} else if customErr := emby.genericErr(resp.StatusCode, ""); customErr != nil {
 		err = customErr
 	}
-	return resp.StatusCode, err
+	return err
 }
 
-func embyGetUsers(emby *MediaBrowser, public bool) ([]User, int, error) {
+func embyGetUsers(emby *MediaBrowser, public bool) ([]User, error) {
 	var result []User
 	var data string
 	var status int
@@ -42,43 +42,43 @@ func embyGetUsers(emby *MediaBrowser, public bool) ([]User, int, error) {
 		if customErr := emby.genericErr(status, ""); customErr != nil {
 			err = customErr
 		}
-		if err != nil || status != 200 {
-			return nil, status, err
+		if err != nil {
+			return nil, err
 		}
 		err := json.Unmarshal([]byte(data), &result)
 		if err != nil {
-			return nil, status, err
+			return nil, err
 		}
 		emby.userCache = result
 		emby.CacheExpiry = time.Now().Add(time.Minute * time.Duration(emby.cacheLength))
 		if result[0].ID[8] == '-' {
 			emby.Hyphens = true
 		}
-		return result, status, nil
+		return result, nil
 	}
-	return emby.userCache, 200, nil
+	return emby.userCache, nil
 }
 
-func embyUserByID(emby *MediaBrowser, userID string, public bool) (User, int, error) {
+func embyUserByID(emby *MediaBrowser, userID string, public bool) (User, error) {
 	if emby.CacheExpiry.After(time.Now()) {
 		for _, user := range emby.userCache {
 			if user.ID == userID {
-				return user, 200, nil
+				return user, nil
 			}
 		}
 		// If the user isn't found in the cache then we update it
 	}
 	if public {
-		users, status, err := emby.GetUsers(public)
-		if err != nil || status != 200 {
-			return User{}, status, err
+		users, err := emby.GetUsers(public)
+		if err != nil {
+			return User{}, err
 		}
 		for _, user := range users {
 			if user.ID == userID {
-				return user, status, nil
+				return user, nil
 			}
 		}
-		return User{}, status, ErrUserNotFound{id: userID}
+		return User{}, ErrUserNotFound{id: userID}
 	}
 	var result User
 	var data string
@@ -91,11 +91,11 @@ func embyUserByID(emby *MediaBrowser, userID string, public bool) (User, int, er
 	} else if customErr := emby.genericErr(status, ""); customErr != nil {
 		err = customErr
 	}
-	if err != nil || status != 200 {
-		return User{}, status, err
+	if err != nil {
+		return User{}, err
 	}
 	json.Unmarshal([]byte(data), &result)
-	return result, status, nil
+	return result, nil
 }
 
 // Since emby doesn't allow one to specify a password on user creation, we:
@@ -103,7 +103,7 @@ func embyUserByID(emby *MediaBrowser, userID string, public bool) (User, int, er
 // Immediately disable it
 // Set password
 // Re-enable it
-func embyNewUser(emby *MediaBrowser, username, password string) (User, int, error) {
+func embyNewUser(emby *MediaBrowser, username, password string) (User, error) {
 	url := fmt.Sprintf("%s/Users/New", emby.Server)
 	data := map[string]interface{}{
 		"Name": username,
@@ -112,8 +112,8 @@ func embyNewUser(emby *MediaBrowser, username, password string) (User, int, erro
 	if customErr := emby.genericErr(status, ""); customErr != nil {
 		err = customErr
 	}
-	if err != nil || !(status == 200 || status == 204) {
-		return User{}, status, err
+	if err != nil {
+		return User{}, err
 	}
 	var recv User
 	json.Unmarshal([]byte(response), &recv)
@@ -125,10 +125,14 @@ func embyNewUser(emby *MediaBrowser, username, password string) (User, int, erro
 		"CurrentPw": "",
 		"NewPw":     password,
 	}
-	_, status, err = emby.post(url, data, false)
-	// Step 3: If setting password errored, try to delete the account
-	if err != nil || !(status == 200 || status == 204) {
-		_, err = emby.DeleteUser(id)
+	var resp string
+	resp, status, err = emby.post(url, data, true)
+	if customErr := emby.genericErr(status, resp); customErr != nil {
+		err = customErr
 	}
-	return recv, status, err
+	// Step 3: If setting password errored, try to delete the account
+	if err != nil {
+		err = emby.DeleteUser(id)
+	}
+	return recv, err
 }

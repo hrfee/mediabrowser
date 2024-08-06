@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -114,7 +113,7 @@ func NewServer(st serverType, server, client, version, device, deviceID string, 
 	defer mb.timeoutHandler()
 	if err == nil {
 		defer resp.Body.Close()
-		data, _ := ioutil.ReadAll(resp.Body)
+		data, _ := io.ReadAll(resp.Body)
 		json.Unmarshal(data, &mb.ServerInfo)
 	}
 	mb.cacheLength = cacheTimeout
@@ -288,7 +287,7 @@ func (mb *MediaBrowser) MustAuthenticate(username, password string, opts MustAut
 }
 
 // DeleteUser deletes the user corresponding to the provided ID.
-func (mb *MediaBrowser) DeleteUser(userID string) (int, error) {
+func (mb *MediaBrowser) DeleteUser(userID string) error {
 	if mb.serverType == JellyfinServer {
 		return jfDeleteUser(mb, userID)
 	}
@@ -296,7 +295,7 @@ func (mb *MediaBrowser) DeleteUser(userID string) (int, error) {
 }
 
 // GetUsers returns all (visible) users on the instance. If public, no authentication is needed but hidden users will not be visible.
-func (mb *MediaBrowser) GetUsers(public bool) ([]User, int, error) {
+func (mb *MediaBrowser) GetUsers(public bool) ([]User, error) {
 	if mb.serverType == JellyfinServer {
 		return jfGetUsers(mb, public)
 	}
@@ -304,7 +303,7 @@ func (mb *MediaBrowser) GetUsers(public bool) ([]User, int, error) {
 }
 
 // UserByID returns the user corresponding to the provided ID.
-func (mb *MediaBrowser) UserByID(userID string, public bool) (User, int, error) {
+func (mb *MediaBrowser) UserByID(userID string, public bool) (User, error) {
 	if mb.serverType == JellyfinServer {
 		return jfUserByID(mb, userID, public)
 	}
@@ -312,7 +311,7 @@ func (mb *MediaBrowser) UserByID(userID string, public bool) (User, int, error) 
 }
 
 // NewUser creates a new user with the provided username and password.
-func (mb *MediaBrowser) NewUser(username, password string) (User, int, error) {
+func (mb *MediaBrowser) NewUser(username, password string) (User, error) {
 	if mb.serverType == JellyfinServer {
 		return jfNewUser(mb, username, password)
 	}
@@ -322,9 +321,9 @@ func (mb *MediaBrowser) NewUser(username, password string) (User, int, error) {
 // ResetPassword resets a user's password by setting it to the given PIN,
 // which is generated when a user attempts to reset on the login page.
 // Only supported on Jellyfin, will return (PasswordResetResponse, -1, nil) on Emby.
-func (mb *MediaBrowser) ResetPassword(pin string) (PasswordResetResponse, int, error) {
+func (mb *MediaBrowser) ResetPassword(pin string) (PasswordResetResponse, error) {
 	if mb.serverType == EmbyServer {
-		return PasswordResetResponse{}, -1, nil
+		return PasswordResetResponse{}, nil
 	}
 	return jfResetPassword(mb, pin)
 }
