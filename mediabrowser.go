@@ -270,7 +270,7 @@ type MustAuthenticateOptions struct {
 }
 
 // MustAuthenticate attempts to authenticate using a username & password, with configurable retries in the event of failure.
-func (mb *MediaBrowser) MustAuthenticate(username, password string, opts MustAuthenticateOptions) (user User, status int, err error) {
+func (mb *MediaBrowser) MustAuthenticate(username, password string, opts MustAuthenticateOptions) (user User, err error) {
 	for i := 0; i < opts.RetryCount; i++ {
 		user, err = mb.Authenticate(username, password)
 		if err == nil {
