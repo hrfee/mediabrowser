@@ -234,6 +234,9 @@ func (mb *MediaBrowser) Authenticate(username, password string) (User, error) {
 	} else if customErr := mb.genericErr(resp.StatusCode, ""); customErr != nil {
 		err = customErr
 	}
+	if err != nil {
+		return User{}, err
+	}
 	defer resp.Body.Close()
 	var d io.Reader
 	switch resp.Header.Get("Content-Encoding") {
