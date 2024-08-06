@@ -157,7 +157,7 @@ func (mb *MediaBrowser) get(url string, params map[string]string) (string, int, 
 	if err != nil || resp.StatusCode != 200 {
 		if resp.StatusCode == 401 && mb.Authenticated {
 			mb.Authenticated = false
-			_, _, authErr := mb.Authenticate(mb.Username, mb.password)
+			_, authErr := mb.Authenticate(mb.Username, mb.password)
 			if authErr == nil {
 				v1, v2, v3 := mb.get(url, params)
 				return v1, v2, v3
@@ -183,7 +183,7 @@ func (mb *MediaBrowser) post(url string, data interface{}, response bool) (strin
 	if err != nil || resp.StatusCode != 200 {
 		if resp.StatusCode == 401 && mb.Authenticated {
 			mb.Authenticated = false
-			_, _, authErr := mb.Authenticate(mb.Username, mb.password)
+			_, authErr := mb.Authenticate(mb.Username, mb.password)
 			if authErr == nil {
 				v1, v2, v3 := mb.post(url, data, response)
 				return v1, v2, v3
@@ -199,7 +199,7 @@ func (mb *MediaBrowser) post(url string, data interface{}, response bool) (strin
 }
 
 // Authenticate attempts to authenticate using a username & password
-func (mb *MediaBrowser) Authenticate(username, password string) (User, int, error) {
+func (mb *MediaBrowser) Authenticate(username, password string) (User, error) {
 	mb.Username = username
 	mb.password = password
 	mb.loginParams = map[string]string{
@@ -212,23 +212,21 @@ func (mb *MediaBrowser) Authenticate(username, password string) (User, int, erro
 	encoder.SetEscapeHTML(false)
 	err := encoder.Encode(mb.loginParams)
 	if err != nil {
-		return User{}, 0, err
+		return User{}, err
 	}
 	// loginParams, _ := json.Marshal(jf.loginParams)
 	url := fmt.Sprintf("%s/Users/authenticatebyname", mb.Server)
 	req, err := http.NewRequest("POST", url, buffer)
 	defer mb.timeoutHandler()
 	if err != nil {
-		return User{}, 0, err
+		return User{}, err
 	}
 	for name, value := range mb.header {
 		req.Header.Add(name, value)
 	}
 	resp, err := mb.httpClient.Do(req)
 	if err != nil {
-		return User{}, 0, err
-	} else if resp.StatusCode != 200 {
-		return User{}, resp.StatusCode, err
+		return User{}, err
 	}
 	// Jellyfin likes to return 400 for a lot of things, even if the api docs don't say so.
 	if resp.StatusCode == 400 {
@@ -246,7 +244,7 @@ func (mb *MediaBrowser) Authenticate(username, password string) (User, int, erro
 	}
 	data, err := io.ReadAll(d)
 	if err != nil {
-		return User{}, 0, err
+		return User{}, err
 	}
 	var respData map[string]interface{}
 	json.Unmarshal(data, &respData)
@@ -254,14 +252,14 @@ func (mb *MediaBrowser) Authenticate(username, password string) (User, int, erro
 	var user User
 	ju, err := json.Marshal(respData["User"])
 	if err != nil {
-		return User{}, 0, err
+		return User{}, err
 	}
 	json.Unmarshal(ju, &user)
 	mb.userID = user.ID
 	mb.auth = fmt.Sprintf("MediaBrowser Client=\"%s\", Device=\"%s\", DeviceId=\"%s\", Version=\"%s\", Token=\"%s\"", mb.client, mb.device, mb.deviceID, mb.version, mb.AccessToken)
 	mb.header["X-Emby-Authorization"] = mb.auth
 	mb.Authenticated = true
-	return user, resp.StatusCode, nil
+	return user, nil
 }
 
 // MustAuthenticateOptions is used to control the behaviour of the MustAuthenticate method.
@@ -274,8 +272,8 @@ type MustAuthenticateOptions struct {
 // MustAuthenticate attempts to authenticate using a username & password, with configurable retries in the event of failure.
 func (mb *MediaBrowser) MustAuthenticate(username, password string, opts MustAuthenticateOptions) (user User, status int, err error) {
 	for i := 0; i < opts.RetryCount; i++ {
-		user, status, err = mb.Authenticate(username, password)
-		if status == 200 && err == nil {
+		user, err = mb.Authenticate(username, password)
+		if err == nil {
 			return
 		}
 		if opts.LogFailures {
