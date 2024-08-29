@@ -163,11 +163,13 @@ func (mb *MediaBrowser) get(url string, params map[string]string) (string, int, 
 				return v1, v2, v3
 			}
 		}
-		return "", resp.StatusCode, err
 	}
 	//var respData map[string]interface{}
 	//json.NewDecoder(data).Decode(&respData)
-	return bodyToString(resp), resp.StatusCode, nil
+	if resp != nil {
+		return bodyToString(resp), resp.StatusCode, err
+	}
+	return "", 0, err
 }
 
 func (mb *MediaBrowser) post(url string, data interface{}, response bool) (string, int, error) {
