@@ -40,7 +40,11 @@ func (err DetailedError) Details() string {
 	if err.Instance != "" {
 		msg += "\nInstance: " + err.Instance
 	}*/
-	return msg + "\n"
+	return msg // + "\n"
+}
+
+func (err DetailedError) IsVerbose() bool {
+	return err.Verbose && err.Data != ""
 }
 
 type ErrUnauthorized struct {
@@ -49,8 +53,8 @@ type ErrUnauthorized struct {
 
 func (err ErrUnauthorized) Error() string {
 	msg := fmt.Sprintf("%d Unauthorized, check credentials.", err.Code)
-	if err.Verbose {
-		msg += "\n" + err.Details()
+	if err.IsVerbose() {
+		msg += " (" + err.Details() + ")"
 	}
 	return msg
 }
@@ -61,8 +65,8 @@ type ErrForbidden struct {
 
 func (err ErrForbidden) Error() string {
 	msg := "forbidden, the user may not have the correct permissions."
-	if err.Verbose {
-		msg += "\n" + err.Details()
+	if err.IsVerbose() {
+		msg += " (" + err.Details() + ")"
 	}
 	return msg
 }
@@ -77,8 +81,8 @@ type ErrUnknown struct {
 
 func (err ErrUnknown) Error() string {
 	msg := fmt.Sprintf("failed (code %d)", err.Code)
-	if err.Verbose {
-		msg += "\n" + err.Details()
+	if err.IsVerbose() {
+		msg += " (" + err.Details() + ")"
 	}
 	return msg
 }
@@ -134,8 +138,8 @@ func (err ErrUserNotFound) Error() string {
 	} else {
 		msg += "User with ID \"" + err.id + "\" not found."
 	}
-	if err.Verbose {
-		msg += "\n" + err.Details()
+	if err.IsVerbose() {
+		msg += " (" + err.Details() + ")"
 	}
 	return msg
 }
@@ -146,8 +150,8 @@ type ErrNoPolicySupplied struct {
 
 func (err ErrNoPolicySupplied) Error() string {
 	msg := "No (valid) policy was given."
-	if err.Verbose {
-		msg += "\n" + err.Details()
+	if err.IsVerbose() {
+		msg += " (" + err.Details() + ")"
 	}
 	return msg
 }
