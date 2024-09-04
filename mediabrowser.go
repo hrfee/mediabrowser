@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -204,6 +205,13 @@ func (mb *MediaBrowser) post(url string, data interface{}, response bool) (strin
 
 // Authenticate attempts to authenticate using a username & password
 func (mb *MediaBrowser) Authenticate(username, password string) (User, error) {
+	// Yes, i know these are useless
+	if username == "" {
+		return User{}, errors.New("blank username not allowed")
+	}
+	if password == "" {
+		return User{}, errors.New("blank password not allowed")
+	}
 	mb.Authenticated = false
 	mb.Username = username
 	mb.password = password
