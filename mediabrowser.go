@@ -91,6 +91,7 @@ func NewServer(st serverType, server, client, version, device, deviceID string, 
 	mb.deviceID = deviceID
 	mb.useragent = fmt.Sprintf("%s/%s", client, version)
 	mb.timeoutHandler = timeoutHandler
+	mb.Authenticated = false
 	mb.auth = fmt.Sprintf("MediaBrowser Client=\"%s\", Device=\"%s\", DeviceId=\"%s\", Version=\"%s\"", client, device, deviceID, version)
 	mb.header = map[string]string{
 		"Accept":               "application/json",
@@ -99,6 +100,7 @@ func NewServer(st serverType, server, client, version, device, deviceID string, 
 		"Accept-Charset":       "UTF-8,*",
 		"Accept-Encoding":      "gzip",
 		"User-Agent":           mb.useragent,
+		"Authorization":        mb.auth,
 		"X-Emby-Authorization": mb.auth,
 	}
 	mb.httpClient = &http.Client{
@@ -202,6 +204,7 @@ func (mb *MediaBrowser) post(url string, data interface{}, response bool) (strin
 
 // Authenticate attempts to authenticate using a username & password
 func (mb *MediaBrowser) Authenticate(username, password string) (User, error) {
+	mb.Authenticated = false
 	mb.Username = username
 	mb.password = password
 	mb.loginParams = map[string]string{
@@ -243,9 +246,13 @@ func (mb *MediaBrowser) Authenticate(username, password string) (User, error) {
 	var d io.Reader
 	switch resp.Header.Get("Content-Encoding") {
 	case "gzip":
-		d, _ = gzip.NewReader(resp.Body)
+		d, err = gzip.NewReader(resp.Body)
 	default:
 		d = resp.Body
+		err = nil
+	}
+	if err != nil {
+		return User{}, err
 	}
 	data, err := io.ReadAll(d)
 	if err != nil {
@@ -253,15 +260,17 @@ func (mb *MediaBrowser) Authenticate(username, password string) (User, error) {
 	}
 	var respData map[string]interface{}
 	json.Unmarshal(data, &respData)
-	mb.AccessToken = respData["AccessToken"].(string)
 	var user User
+	// Please god why did I do this (not gonna change it now)
 	ju, err := json.Marshal(respData["User"])
 	if err != nil {
 		return User{}, err
 	}
 	json.Unmarshal(ju, &user)
+	mb.AccessToken = respData["AccessToken"].(string)
 	mb.userID = user.ID
 	mb.auth = fmt.Sprintf("MediaBrowser Client=\"%s\", Device=\"%s\", DeviceId=\"%s\", Version=\"%s\", Token=\"%s\"", mb.client, mb.device, mb.deviceID, mb.version, mb.AccessToken)
+	mb.header["Authorization"] = mb.auth
 	mb.header["X-Emby-Authorization"] = mb.auth
 	mb.Authenticated = true
 	return user, nil
@@ -291,6 +300,13 @@ func (mb *MediaBrowser) MustAuthenticate(username, password string, opts MustAut
 
 // DeleteUser deletes the user corresponding to the provided ID.
 func (mb *MediaBrowser) DeleteUser(userID string) error {
+	if !mb.Authenticated {
+		_, err := mb.Authenticate(mb.Username, mb.password)
+		if err != nil {
+			return err
+		}
+	}
+
 	if mb.serverType == JellyfinServer {
 		return jfDeleteUser(mb, userID)
 	}
@@ -299,6 +315,13 @@ func (mb *MediaBrowser) DeleteUser(userID string) error {
 
 // GetUsers returns all (visible) users on the instance. If public, no authentication is needed but hidden users will not be visible.
 func (mb *MediaBrowser) GetUsers(public bool) ([]User, error) {
+	if !public && !mb.Authenticated {
+		_, err := mb.Authenticate(mb.Username, mb.password)
+		if err != nil {
+			return []User{}, err
+		}
+	}
+
 	if mb.serverType == JellyfinServer {
 		return jfGetUsers(mb, public)
 	}
@@ -307,6 +330,13 @@ func (mb *MediaBrowser) GetUsers(public bool) ([]User, error) {
 
 // UserByID returns the user corresponding to the provided ID.
 func (mb *MediaBrowser) UserByID(userID string, public bool) (User, error) {
+	if !mb.Authenticated {
+		_, err := mb.Authenticate(mb.Username, mb.password)
+		if err != nil {
+			return User{}, err
+		}
+	}
+
 	if mb.serverType == JellyfinServer {
 		return jfUserByID(mb, userID, public)
 	}
@@ -315,6 +345,13 @@ func (mb *MediaBrowser) UserByID(userID string, public bool) (User, error) {
 
 // NewUser creates a new user with the provided username and password.
 func (mb *MediaBrowser) NewUser(username, password string) (User, error) {
+	if !mb.Authenticated {
+		_, err := mb.Authenticate(mb.Username, mb.password)
+		if err != nil {
+			return User{}, err
+		}
+	}
+
 	if mb.serverType == JellyfinServer {
 		return jfNewUser(mb, username, password)
 	}
