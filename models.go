@@ -110,6 +110,7 @@ type Policy struct {
 	BlockedChannels              []interface{} `json:"BlockedChannels,omitempty"`
 	PasswordResetProviderID      string        `json:"PasswordResetProviderId"`
 	SyncPlayAccess               string        `json:"SyncPlayAccess"`
+
 	// Emby Only
 	IsHiddenRemotely           bool          `json:"IsHiddenRemotely"`
 	IsHiddenFromUnusedDevices  bool          `json:"IsHiddenFromUnusedDevices"`
@@ -117,6 +118,13 @@ type Policy struct {
 	EnableSubtitleDownloading  bool          `json:"EnableSubtitleDownloading"`
 	ExcludedSubFolders         []interface{} `json:"ExcludedSubFolders,omitempty"`
 	SimultaneousStreamLimit    int           `json:"SimultaneousStreamLimit"`
+	AllowCameraUpload          bool          `json:"AllowCameraUpload"`
+	AllowSharingPersonalItems  bool          `json:"AllowSharingPersonalItems"`
+	AllowTagOrRating           bool          `json:"AllowTagOrRating"`
+	IncludeTags                []string      `json:"IncludeTags,omitempty"`
+	RestrictedFeatures         []string      `json:"RestrictedFeatures,omitempty"`
+	LockedOutDate              int64         `json:"LockedOutDate"`
+	MaxParentalRating          *int          `json:"MaxParentalRating,omitempty"`
 }
 
 // DeNullPolicy ensures there are no "null" fields in the given Policy.
@@ -151,6 +159,12 @@ func DeNullPolicy(p *Policy) {
 	}
 	if p.ExcludedSubFolders == nil {
 		p.ExcludedSubFolders = []interface{}{}
+	}
+	if p.IncludeTags == nil {
+		p.IncludeTags = []string{}
+	}
+	if p.RestrictedFeatures == nil {
+		p.RestrictedFeatures = []string{}
 	}
 	if p.EnabledFolders == nil {
 		p.EnabledFolders = []string{}
