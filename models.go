@@ -105,6 +105,7 @@ type Policy struct {
 	ForceRemoteSourceTranscoding bool          `json:"ForceRemoteSourceTranscoding"`
 	LoginAttemptsBeforeLockout   int           `json:"LoginAttemptsBeforeLockout"`
 	MaxActiveSessions            int           `json:"MaxActiveSessions"`
+	MaxParentalRating            int           `json:"MaxParentalRating"`
 	BlockedMediaFolders          []interface{} `json:"BlockedMediaFolders,omitempty"`
 	BlockedChannels              []interface{} `json:"BlockedChannels,omitempty"`
 	PasswordResetProviderID      string        `json:"PasswordResetProviderId"`
