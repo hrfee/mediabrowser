@@ -28,6 +28,7 @@ type AuthenticationResult struct {
 }
 
 type Configuration struct {
+	AudioLanguagePreference    string        `json:"AudioLanguagePreference"`
 	PlayDefaultAudioTrack      bool          `json:"PlayDefaultAudioTrack"`
 	SubtitleLanguagePreference string        `json:"SubtitleLanguagePreference"`
 	DisplayMissingEpisodes     bool          `json:"DisplayMissingEpisodes"`
