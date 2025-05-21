@@ -65,6 +65,13 @@ func (mb *MediaBrowser) syncUserCache(public bool) error {
 
 // UserByID returns the user corresponding to the provided ID.
 func (mb *MediaBrowser) UserByID(userID string, public bool) (User, error) {
+	if userID == "" {
+		return User{}, ErrUserNotFound{}
+	}
+	if u, err := mb.UserByIDFromCache(userID); err == nil {
+		return u, err
+	}
+	// If the user isn't found in the cache then we update it
 	if !mb.Authenticated {
 		_, err := mb.Authenticate(mb.Username, mb.password)
 		if err != nil {
@@ -72,12 +79,6 @@ func (mb *MediaBrowser) UserByID(userID string, public bool) (User, error) {
 		}
 	}
 
-	if mb.CacheExpiry.After(time.Now()) {
-		if i, ok := mb.usersByID[userID]; ok {
-			return mb.userCache[i], nil
-		}
-		// If the user isn't found in the cache then we update it
-	}
 	if public {
 		_, err := mb.GetUsers(public)
 		if err != nil {
@@ -109,8 +110,32 @@ func (mb *MediaBrowser) UserByID(userID string, public bool) (User, error) {
 	return result, nil
 }
 
+// UserByIDFromCache searches only the local cache (reloading it if dated) for the user, rather than falling back to Jellyfin/Emby.
+func (mb *MediaBrowser) UserByIDFromCache(userID string) (User, error) {
+	if userID == "" {
+		return User{}, ErrUserNotFound{}
+	}
+	if time.Now().After(mb.CacheExpiry) {
+		if err := mb.syncUserCache(false); err != nil {
+			return User{}, err
+		}
+	}
+	if i, ok := mb.usersByID[userID]; ok {
+		return mb.userCache[i], nil
+	}
+	return User{}, ErrUserNotFound{id: userID}
+}
+
 // UserByName returns the user corresponding to the provided username.
 func (mb *MediaBrowser) UserByName(username string, public bool) (User, error) {
+	if username == "" {
+		return User{}, ErrUserNotFound{}
+	}
+	if time.Now().After(mb.CacheExpiry) {
+		if err := mb.syncUserCache(false); err != nil {
+			return User{}, err
+		}
+	}
 	username = strings.ToLower(username)
 	find := func() int {
 		if i, ok := mb.usersByName[username]; ok {
@@ -129,6 +154,22 @@ func (mb *MediaBrowser) UserByName(username string, public bool) (User, error) {
 		}
 	}
 	return mb.userCache[idx], nil
+}
+
+// UserByNameFromCache searches only the local cache (reloading it if dated) for the user, rather than falling back to Jellyfin/Emby.
+func (mb *MediaBrowser) UserByNameFromCache(username string) (User, error) {
+	if username == "" {
+		return User{}, ErrUserNotFound{}
+	}
+	if time.Now().After(mb.CacheExpiry) {
+		if err := mb.syncUserCache(false); err != nil {
+			return User{}, err
+		}
+	}
+	if i, ok := mb.usersByName[username]; ok {
+		return mb.userCache[i], nil
+	}
+	return User{}, ErrUserNotFound{user: username}
 }
 
 // SetPolicy sets the access policy for the user corresponding to the provided ID.
