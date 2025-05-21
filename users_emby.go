@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 )
 
 func embyDeleteUser(emby *MediaBrowser, userID string) error {
@@ -24,78 +23,6 @@ func embyDeleteUser(emby *MediaBrowser, userID string) error {
 		err = customErr
 	}
 	return err
-}
-
-func embyGetUsers(emby *MediaBrowser, public bool) ([]User, error) {
-	var result []User
-	var data string
-	var status int
-	var err error
-	if time.Now().After(emby.CacheExpiry) {
-		if public {
-			url := fmt.Sprintf("%s/users/public", emby.Server)
-			data, status, err = emby.get(url, nil)
-		} else {
-			url := fmt.Sprintf("%s/users", emby.Server)
-			data, status, err = emby.get(url, emby.loginParams)
-		}
-		if customErr := emby.genericErr(status, ""); customErr != nil {
-			err = customErr
-		}
-		if err != nil {
-			return nil, err
-		}
-		err := json.Unmarshal([]byte(data), &result)
-		if err != nil {
-			return nil, err
-		}
-		emby.userCache = result
-		emby.CacheExpiry = time.Now().Add(time.Minute * time.Duration(emby.cacheLength))
-		if result[0].ID[8] == '-' {
-			emby.Hyphens = true
-		}
-		return result, nil
-	}
-	return emby.userCache, nil
-}
-
-func embyUserByID(emby *MediaBrowser, userID string, public bool) (User, error) {
-	if emby.CacheExpiry.After(time.Now()) {
-		for _, user := range emby.userCache {
-			if user.ID == userID {
-				return user, nil
-			}
-		}
-		// If the user isn't found in the cache then we update it
-	}
-	if public {
-		users, err := emby.GetUsers(public)
-		if err != nil {
-			return User{}, err
-		}
-		for _, user := range users {
-			if user.ID == userID {
-				return user, nil
-			}
-		}
-		return User{}, ErrUserNotFound{id: userID}
-	}
-	var result User
-	var data string
-	var status int
-	var err error
-	url := fmt.Sprintf("%s/users/%s", emby.Server, userID)
-	data, status, err = emby.get(url, emby.loginParams)
-	if status == 404 || status == 400 {
-		err = ErrUserNotFound{id: userID}
-	} else if customErr := emby.genericErr(status, ""); customErr != nil {
-		err = customErr
-	}
-	if err != nil {
-		return User{}, err
-	}
-	json.Unmarshal([]byte(data), &result)
-	return result, nil
 }
 
 // Since emby doesn't allow one to specify a password on user creation, we:
