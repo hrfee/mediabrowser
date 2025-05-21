@@ -54,23 +54,27 @@ type ServerInfo struct {
 
 // MediaBrowser is an api instance of Jellyfin/Emby.
 type MediaBrowser struct {
-	Server                          string
-	client                          string
-	version                         string
-	device                          string
-	deviceID                        string
-	useragent                       string
-	auth                            string
-	header                          map[string]string
-	ServerInfo                      ServerInfo
-	Username                        string
-	password                        string
-	Authenticated                   bool
-	AccessToken                     string
-	userID                          string
-	httpClient                      *http.Client
-	loginParams                     map[string]string
-	userCache                       []User
+	Server        string
+	client        string
+	version       string
+	device        string
+	deviceID      string
+	useragent     string
+	auth          string
+	header        map[string]string
+	ServerInfo    ServerInfo
+	Username      string
+	password      string
+	Authenticated bool
+	AccessToken   string
+	userID        string
+	httpClient    *http.Client
+	loginParams   map[string]string
+	userCache     []User
+	// Map of IDs to array indices
+	usersByID map[string]int
+	// Map of lowercase names to array indices
+	usersByName                     map[string]int
 	libraryCache                    []VirtualFolder
 	CacheExpiry, LibraryCacheExpiry time.Time // first is UserCacheExpiry, keeping name for compatability
 	cacheLength                     int
@@ -319,36 +323,6 @@ func (mb *MediaBrowser) DeleteUser(userID string) error {
 		return jfDeleteUser(mb, userID)
 	}
 	return embyDeleteUser(mb, userID)
-}
-
-// GetUsers returns all (visible) users on the instance. If public, no authentication is needed but hidden users will not be visible.
-func (mb *MediaBrowser) GetUsers(public bool) ([]User, error) {
-	if !public && !mb.Authenticated {
-		_, err := mb.Authenticate(mb.Username, mb.password)
-		if err != nil {
-			return []User{}, err
-		}
-	}
-
-	if mb.serverType == JellyfinServer {
-		return jfGetUsers(mb, public)
-	}
-	return embyGetUsers(mb, public)
-}
-
-// UserByID returns the user corresponding to the provided ID.
-func (mb *MediaBrowser) UserByID(userID string, public bool) (User, error) {
-	if !mb.Authenticated {
-		_, err := mb.Authenticate(mb.Username, mb.password)
-		if err != nil {
-			return User{}, err
-		}
-	}
-
-	if mb.serverType == JellyfinServer {
-		return jfUserByID(mb, userID, public)
-	}
-	return embyUserByID(mb, userID, public)
 }
 
 // NewUser creates a new user with the provided username and password.

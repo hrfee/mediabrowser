@@ -9,28 +9,126 @@ import (
 	"time"
 )
 
-// UserByName returns the user corresponding to the provided username.
-func (mb *MediaBrowser) UserByName(username string, public bool) (User, error) {
-	username = strings.ToLower(username)
-	var match User
-	find := func() (User, error) {
-		users, err := mb.GetUsers(public)
+// GetUsers returns all (visible) users on the instance. If public, no authentication is needed but hidden users will not be visible.
+func (mb *MediaBrowser) GetUsers(public bool) ([]User, error) {
+	if !public && !mb.Authenticated {
+		_, err := mb.Authenticate(mb.Username, mb.password)
+		if err != nil {
+			return []User{}, err
+		}
+	}
+	if time.Now().After(mb.CacheExpiry) {
+		if err := mb.syncUserCache(public); err != nil {
+			return nil, err
+		}
+	}
+	return mb.userCache, nil
+}
+
+func (mb *MediaBrowser) syncUserCache(public bool) error {
+	var result []User
+	var data string
+	var status int
+	var err error
+
+	if public {
+		url := fmt.Sprintf("%s/users/public", mb.Server)
+		data, status, err = mb.get(url, nil)
+	} else {
+		url := fmt.Sprintf("%s/users", mb.Server)
+		data, status, err = mb.get(url, mb.loginParams)
+	}
+	if customErr := mb.genericErr(status, data); customErr != nil {
+		err = customErr
+	}
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal([]byte(data), &result)
+	if err != nil {
+		return err
+	}
+	mb.userCache = result
+	mb.usersByID = map[string]int{}
+	mb.usersByName = map[string]int{}
+	for i := range mb.userCache {
+		mb.usersByID[mb.userCache[i].ID] = i
+		// While usernames have case, Jellyfin (at least) counts identical usernames with different cases as identical.
+		mb.usersByName[strings.ToLower(mb.userCache[i].Name)] = i
+	}
+	mb.CacheExpiry = time.Now().Add(time.Minute * time.Duration(mb.cacheLength))
+	if result[0].ID[8] == '-' {
+		mb.Hyphens = true
+	}
+	return nil
+}
+
+// UserByID returns the user corresponding to the provided ID.
+func (mb *MediaBrowser) UserByID(userID string, public bool) (User, error) {
+	if !mb.Authenticated {
+		_, err := mb.Authenticate(mb.Username, mb.password)
 		if err != nil {
 			return User{}, err
 		}
-		for _, user := range users {
-			if strings.ToLower(user.Name) == username {
-				return user, err
-			}
+	}
+
+	if mb.CacheExpiry.After(time.Now()) {
+		if i, ok := mb.usersByID[userID]; ok {
+			return mb.userCache[i], nil
 		}
-		return User{}, ErrUserNotFound{user: username}
+		// If the user isn't found in the cache then we update it
 	}
-	match, err := find()
-	if match.Name == "" {
+	if public {
+		_, err := mb.GetUsers(public)
+		if err != nil {
+			return User{}, err
+		}
+		if i, ok := mb.usersByID[userID]; ok {
+			return mb.userCache[i], nil
+		}
+		return User{}, ErrUserNotFound{id: userID}
+	}
+	var result User
+	var data string
+	var status int
+	var err error
+	url := fmt.Sprintf("%s/users/%s", mb.Server, userID)
+	data, status, err = mb.get(url, mb.loginParams)
+	if status == 404 || status == 400 {
+		err = ErrUserNotFound{id: userID}
+		if mb.Verbose {
+			json.Unmarshal([]byte(data), &err)
+		}
+	} else if customErr := mb.genericErr(status, data); customErr != nil {
+		err = customErr
+	}
+	if err != nil {
+		return User{}, err
+	}
+	json.Unmarshal([]byte(data), &result)
+	return result, nil
+}
+
+// UserByName returns the user corresponding to the provided username.
+func (mb *MediaBrowser) UserByName(username string, public bool) (User, error) {
+	username = strings.ToLower(username)
+	find := func() int {
+		if i, ok := mb.usersByName[username]; ok {
+			return i
+		}
+		return -1
+	}
+
+	idx := find()
+	if idx == -1 {
+		// Force-reload cache if not found
 		mb.CacheExpiry = time.Now()
-		match, err = find()
+		idx := find()
+		if idx == -1 {
+			return User{}, ErrUserNotFound{user: username}
+		}
 	}
-	return match, err
+	return mb.userCache[idx], nil
 }
 
 // SetPolicy sets the access policy for the user corresponding to the provided ID.
