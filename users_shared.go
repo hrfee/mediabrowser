@@ -17,50 +17,84 @@ func (mb *MediaBrowser) GetUsers(public bool) ([]User, error) {
 			return []User{}, err
 		}
 	}
-	if time.Now().After(mb.CacheExpiry) {
-		if err := mb.syncUserCache(public); err != nil {
-			return nil, err
-		}
+	if err := mb.syncUserCache(public); err != nil {
+		return nil, err
 	}
 	return mb.userCache, nil
 }
 
 func (mb *MediaBrowser) syncUserCache(public bool) error {
-	var result []User
-	var data string
-	var status int
-	var err error
+	if mb.CacheExpiry.After(time.Now()) {
+		return nil
+	}
 
-	if public {
-		url := fmt.Sprintf("%s/users/public", mb.Server)
-		data, status, err = mb.get(url, nil)
-	} else {
-		url := fmt.Sprintf("%s/users", mb.Server)
-		data, status, err = mb.get(url, mb.loginParams)
-	}
-	if customErr := mb.genericErr(status, data); customErr != nil {
-		err = customErr
-	}
-	if err != nil {
-		return err
-	}
-	err = json.Unmarshal([]byte(data), &result)
-	if err != nil {
-		return err
-	}
-	mb.userCache = result
-	mb.usersByID = map[string]int{}
-	mb.usersByName = map[string]int{}
-	for i := range mb.userCache {
-		mb.usersByID[mb.userCache[i].ID] = i
-		// While usernames have case, Jellyfin (at least) counts identical usernames with different cases as identical.
-		mb.usersByName[strings.ToLower(mb.userCache[i].Name)] = i
-	}
-	mb.CacheExpiry = time.Now().Add(time.Minute * time.Duration(mb.cacheLength))
-	if result[0].ID[8] == '-' {
-		mb.Hyphens = true
-	}
-	return nil
+	syncStatus := make(chan error)
+
+	go func(syncStatus chan error, mb *MediaBrowser) {
+		mb.syncLock.Lock()
+		alreadySyncing := mb.syncing
+		// We're either already syncing or will be
+		mb.syncing = true
+		mb.syncLock.Unlock()
+		if !alreadySyncing {
+			var result []User
+			var data string
+			var status int
+			var err error
+
+			if public {
+				url := fmt.Sprintf("%s/users/public", mb.Server)
+				data, status, err = mb.get(url, nil)
+			} else {
+				url := fmt.Sprintf("%s/users", mb.Server)
+				data, status, err = mb.get(url, mb.loginParams)
+			}
+			if customErr := mb.genericErr(status, data); customErr != nil {
+				err = customErr
+			}
+			if err != nil {
+				mb.syncLock.Lock()
+				mb.syncing = false
+				mb.syncLock.Unlock()
+				syncStatus <- err
+				return
+			}
+			err = json.Unmarshal([]byte(data), &result)
+			if err != nil {
+				mb.syncLock.Lock()
+				mb.syncing = false
+				mb.syncLock.Unlock()
+				syncStatus <- err
+				return
+			}
+			mb.userCache = result
+			mb.usersByID = map[string]int{}
+			mb.usersByName = map[string]int{}
+			for i := range mb.userCache {
+				mb.usersByID[mb.userCache[i].ID] = i
+				// While usernames have case, Jellyfin (at least) counts identical usernames with different cases as identical.
+				mb.usersByName[strings.ToLower(mb.userCache[i].Name)] = i
+			}
+			mb.CacheExpiry = time.Now().Add(time.Minute * time.Duration(mb.cacheLength))
+			// Quirk
+			if len(result) != 0 && result[0].ID[8] == '-' {
+				mb.Hyphens = true
+			}
+
+			mb.syncLock.Lock()
+			mb.syncing = false
+			mb.syncLock.Unlock()
+		} else {
+			for mb.syncing {
+				continue
+			}
+		}
+		syncStatus <- nil
+	}(syncStatus, mb)
+
+	// Wait for completion
+	err := <-syncStatus
+	return err
 }
 
 // UserByID returns the user corresponding to the provided ID.
@@ -115,10 +149,8 @@ func (mb *MediaBrowser) UserByIDFromCache(userID string) (User, error) {
 	if userID == "" {
 		return User{}, ErrUserNotFound{}
 	}
-	if time.Now().After(mb.CacheExpiry) {
-		if err := mb.syncUserCache(false); err != nil {
-			return User{}, err
-		}
+	if err := mb.syncUserCache(false); err != nil {
+		return User{}, err
 	}
 	if i, ok := mb.usersByID[userID]; ok {
 		return mb.userCache[i], nil
@@ -131,10 +163,8 @@ func (mb *MediaBrowser) UserByName(username string, public bool) (User, error) {
 	if username == "" {
 		return User{}, ErrUserNotFound{}
 	}
-	if time.Now().After(mb.CacheExpiry) {
-		if err := mb.syncUserCache(false); err != nil {
-			return User{}, err
-		}
+	if err := mb.syncUserCache(false); err != nil {
+		return User{}, err
 	}
 	username = strings.ToLower(username)
 	find := func() int {
@@ -161,10 +191,8 @@ func (mb *MediaBrowser) UserByNameFromCache(username string) (User, error) {
 	if username == "" {
 		return User{}, ErrUserNotFound{}
 	}
-	if time.Now().After(mb.CacheExpiry) {
-		if err := mb.syncUserCache(false); err != nil {
-			return User{}, err
-		}
+	if err := mb.syncUserCache(false); err != nil {
+		return User{}, err
 	}
 	if i, ok := mb.usersByName[username]; ok {
 		return mb.userCache[i], nil

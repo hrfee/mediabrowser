@@ -13,6 +13,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -71,6 +72,8 @@ type MediaBrowser struct {
 	httpClient    *http.Client
 	loginParams   map[string]string
 	userCache     []User
+	syncLock      sync.Mutex
+	syncing       bool
 	// Map of IDs to array indices
 	usersByID map[string]int
 	// Map of lowercase names to array indices
