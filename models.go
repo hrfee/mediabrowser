@@ -97,6 +97,7 @@ type Policy struct {
 	EnablePublicSharing              bool          `json:"EnablePublicSharing"`
 	RemoteClientBitrateLimit         int           `json:"RemoteClientBitrateLimit"`
 	AuthenticationProviderID         string        `json:"AuthenticationProviderId"`
+	MaxParentalRating                *int          `json:"MaxParentalRating,omitempty"`
 
 	EnableCollectionManagement bool `json:"EnableCollectionManagement"`
 	EnableSubtitleManagement   bool `json:"EnableSubtitleManagement"`
@@ -106,7 +107,6 @@ type Policy struct {
 	ForceRemoteSourceTranscoding bool          `json:"ForceRemoteSourceTranscoding"`
 	LoginAttemptsBeforeLockout   int           `json:"LoginAttemptsBeforeLockout"`
 	MaxActiveSessions            int           `json:"MaxActiveSessions"`
-	MaxParentalRating            *int          `json:"MaxParentalRating,omitempty"`
 	BlockedMediaFolders          []interface{} `json:"BlockedMediaFolders,omitempty"`
 	BlockedChannels              []interface{} `json:"BlockedChannels,omitempty"`
 	PasswordResetProviderID      string        `json:"PasswordResetProviderId"`
@@ -118,6 +118,12 @@ type Policy struct {
 	EnableSubtitleDownloading  bool          `json:"EnableSubtitleDownloading"`
 	ExcludedSubFolders         []interface{} `json:"ExcludedSubFolders,omitempty"`
 	SimultaneousStreamLimit    int           `json:"SimultaneousStreamLimit"`
+	AllowCameraUpload          bool          `json:"AllowCameraUpload"`
+	AllowSharingPersonalItems  bool          `json:"AllowSharingPersonalItems"`
+	AllowTagOrRating           bool          `json:"AllowTagOrRating"`
+	IncludeTags                []string      `json:"IncludeTags,omitempty"`
+	RestrictedFeatures         []string      `json:"RestrictedFeatures,omitempty"`
+	LockedOutDate              int64         `json:"LockedOutDate"`
 }
 
 // DeNullPolicy ensures there are no "null" fields in the given Policy.
@@ -155,6 +161,12 @@ func DeNullPolicy(p *Policy) {
 	}
 	if p.EnabledFolders == nil {
 		p.EnabledFolders = []string{}
+	}
+	if p.IncludeTags == nil {
+		p.IncludeTags = []string{}
+	}
+	if p.RestrictedFeatures == nil {
+		p.RestrictedFeatures = []string{}
 	}
 }
 
