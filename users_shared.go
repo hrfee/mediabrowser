@@ -129,11 +129,15 @@ func (mb *MediaBrowser) UserByID(userID string, public bool) (User, error) {
 	var err error
 	url := fmt.Sprintf("%s/users/%s", mb.Server, userID)
 	data, status, err = mb.get(url, mb.loginParams)
-	if status == 404 || status == 400 {
-		err = ErrUserNotFound{id: userID}
+	if (status == 404 && (mb.ServerType == EmbyServer || data == "User not found")) || status == 400 {
+		// 400 is really an "invalid ID", but we'll keep it as this for now.
+		newErr := ErrUserNotFound{id: userID}
 		if mb.Verbose {
-			json.Unmarshal([]byte(data), &err)
+			newErr.Verbose = true
+			newErr.Code = status
+			newErr.Data = data
 		}
+		err = newErr
 	} else if customErr := mb.genericErr(status, data); customErr != nil {
 		err = customErr
 	}
