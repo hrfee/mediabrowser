@@ -150,7 +150,7 @@ func bodyToString(resp *http.Response) string {
 	return buf.String()
 }
 
-func (mb *MediaBrowser) get(url string, params map[string]string) (string, int, error) {
+func (mb *MediaBrowser) get(url string, params map[string]string, queryParams map[string]interface{}) (string, int, error) {
 	var req *http.Request
 	if params != nil {
 		jsonParams, _ := json.Marshal(params)
@@ -161,6 +161,13 @@ func (mb *MediaBrowser) get(url string, params map[string]string) (string, int, 
 	for name, value := range mb.header {
 		req.Header.Add(name, value)
 	}
+	if queryParams != nil {
+		q := req.URL.Query()
+		for k, v := range queryParams {
+			q.Add(k, fmt.Sprint(v))
+		}
+		req.URL.RawQuery = q.Encode()
+	}
 	resp, err := mb.httpClient.Do(req)
 	defer mb.timeoutHandler()
 	defer resp.Body.Close()
@@ -169,7 +176,7 @@ func (mb *MediaBrowser) get(url string, params map[string]string) (string, int, 
 			mb.Authenticated = false
 			_, authErr := mb.Authenticate(mb.Username, mb.password)
 			if authErr == nil {
-				v1, v2, v3 := mb.get(url, params)
+				v1, v2, v3 := mb.get(url, params, queryParams)
 				return v1, v2, v3
 			}
 		}
@@ -236,6 +243,7 @@ func (mb *MediaBrowser) Authenticate(username, password string) (User, error) {
 	}
 	// loginParams, _ := json.Marshal(jf.loginParams)
 	url := fmt.Sprintf("%s/Users/authenticatebyname", mb.Server)
+	fmt.Println("POST", url)
 	req, err := http.NewRequest("POST", url, buffer)
 	defer mb.timeoutHandler()
 	if err != nil {

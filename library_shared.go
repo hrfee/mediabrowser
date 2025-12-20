@@ -15,7 +15,7 @@ func (mb *MediaBrowser) GetLibraries() ([]VirtualFolder, int, error) {
 	var err error
 	if time.Now().After(mb.LibraryCacheExpiry) {
 		url := fmt.Sprintf("%s/Library/VirtualFolders", mb.Server)
-		data, status, err = mb.get(url, nil)
+		data, status, err = mb.get(url, nil, nil)
 		if customErr := mb.genericErr(status, ""); customErr != nil {
 			err = customErr
 		}

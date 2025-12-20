@@ -1,6 +1,11 @@
 package mediabrowser
 
-import "time"
+import (
+	"time"
+)
+
+// TimeFormat is the go time.Time layout for formatting/parsing times sent to/from Jellyfin & Emby.
+const TimeFormat = "2006-01-02T15:04:05"
 
 type magicParse struct {
 	Parsed time.Time `json:"parseme"`
@@ -27,6 +32,18 @@ func (t *Time) UnmarshalJSON(b []byte) (err error) {
 	if i != 0 {
 		b = b[:i]
 	}
-	t.Time, err = time.Parse("2006-01-02T15:04:05", string(b))
+	t.Time, err = time.Parse(TimeFormat, string(b))
 	return
+}
+
+func (t *Time) MarshalJSON() ([]byte, error) {
+	return []byte("\"" + t.Format(TimeFormat) + "\""), nil
+}
+
+func toMediabrowserTime(t ConvertableToMediabrowserTime) string {
+	return t.Format(TimeFormat)
+}
+
+type ConvertableToMediabrowserTime interface {
+	Format(layout string) string
 }

@@ -44,10 +44,10 @@ func (mb *MediaBrowser) syncUserCache(public bool) error {
 
 			if public {
 				url := fmt.Sprintf("%s/users/public", mb.Server)
-				data, status, err = mb.get(url, nil)
+				data, status, err = mb.get(url, nil, nil)
 			} else {
 				url := fmt.Sprintf("%s/users", mb.Server)
-				data, status, err = mb.get(url, mb.loginParams)
+				data, status, err = mb.get(url, mb.loginParams, nil)
 			}
 			if customErr := mb.genericErr(status, data); customErr != nil {
 				err = customErr
@@ -128,7 +128,7 @@ func (mb *MediaBrowser) UserByID(userID string, public bool) (User, error) {
 	var status int
 	var err error
 	url := fmt.Sprintf("%s/users/%s", mb.Server, userID)
-	data, status, err = mb.get(url, mb.loginParams)
+	data, status, err = mb.get(url, mb.loginParams, nil)
 	if (status == 404 && (mb.serverType == EmbyServer || data == "\"User not found\"")) || status == 400 {
 		// 400 is really an "invalid ID", but we'll keep it as this for now.
 		newErr := ErrUserNotFound{id: userID}
@@ -236,7 +236,7 @@ func (mb *MediaBrowser) SetConfiguration(userID string, configuration Configurat
 // GetDisplayPreferences gets the displayPreferences (part of homescreen layout) for the user corresponding to the provided ID.
 func (mb *MediaBrowser) GetDisplayPreferences(userID string) (map[string]interface{}, error) {
 	url := fmt.Sprintf("%s/DisplayPreferences/usersettings?userId=%s&client=emby", mb.Server, userID)
-	data, status, err := mb.get(url, nil)
+	data, status, err := mb.get(url, nil, nil)
 	if customErr := mb.genericErr(status, data); customErr != nil {
 		err = customErr
 	}

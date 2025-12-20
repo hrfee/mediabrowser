@@ -5,13 +5,21 @@ import (
 	"time"
 )
 
+func TestMarshalJSON(t *testing.T) {
+	expected := "2021-01-27T03:16:36"
+	t1, _ := time.Parse(TimeFormat, expected)
+	t1Bytes, _ := (&Time{t1}).MarshalJSON()
+	if string(t1Bytes) != expected {
+		t.Errorf("output != expected: %s != %s", string(t1Bytes), expected)
+	}
+}
+
 func TestUnmarshalJSON(t *testing.T) {
-	parseFmt := "2006-01-02T15:04:05"
 	tests := map[string]time.Time{}
-	tests["2021-01-27T03:16:36.28538ZZ"], _ = time.Parse(parseFmt, "2021-01-27T03:16:36")
-	tests["\"2021-01-27T03:16:36.28538ZZ\""], _ = time.Parse(parseFmt, "2021-01-27T03:16:36")
-	tests["\"2021-01-27T03:16:36.28538Z\""], _ = time.Parse(parseFmt, "2021-01-27T03:16:36")
-	tests["\"2021-01-09T20:58:41.5907920+00:00\""], _ = time.Parse(parseFmt, "2021-01-09T20:58:41")
+	tests["2021-01-27T03:16:36.28538ZZ"], _ = time.Parse(TimeFormat, "2021-01-27T03:16:36")
+	tests["\"2021-01-27T03:16:36.28538ZZ\""], _ = time.Parse(TimeFormat, "2021-01-27T03:16:36")
+	tests["\"2021-01-27T03:16:36.28538Z\""], _ = time.Parse(TimeFormat, "2021-01-27T03:16:36")
+	tests["\"2021-01-09T20:58:41.5907920+00:00\""], _ = time.Parse(TimeFormat, "2021-01-09T20:58:41")
 	for in, expected := range tests {
 		parsed := Time{}
 		err := parsed.UnmarshalJSON([]byte(in))

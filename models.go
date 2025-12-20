@@ -303,3 +303,32 @@ type AddMedia struct {
 	Path     string   `json:"Path"`
 	PathInfo PathInfo `json:"PathInfo"`
 }
+
+type ActivityLog struct {
+	Items            []ActivityLogEntry `json:"Items"`
+	TotalRecordCount int                `json:"TotalRecordCount"`
+	StartIndex       int                `json:"StartIndex"`
+}
+
+type ActivitySeverity string
+
+const (
+	Info  ActivitySeverity = "Info"
+	Debug ActivitySeverity = "Debug"
+	Warn  ActivitySeverity = "Warn"
+	Error ActivitySeverity = "Error"
+	Fatal ActivitySeverity = "Fatal"
+)
+
+type ActivityLogEntry struct {
+	ID                  int64            `json:"Id"`
+	Name                string           `json:"Name"`
+	Overview            string           `json:"Overview"`
+	ShortOverview       string           `json:"ShortOverview"`
+	Type                string           `json:"Type"`
+	ItemID              string           `json:"ItemId"`
+	Date                Time             `json:"Date"`
+	UserID              string           `json:"UserId"`
+	UserPrimaryImageTag string           `json:"UserPrimaryImageTag"`
+	Severity            ActivitySeverity `json:"Severity"`
+}
