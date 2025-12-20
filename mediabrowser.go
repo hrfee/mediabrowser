@@ -243,7 +243,6 @@ func (mb *MediaBrowser) Authenticate(username, password string) (User, error) {
 	}
 	// loginParams, _ := json.Marshal(jf.loginParams)
 	url := fmt.Sprintf("%s/Users/authenticatebyname", mb.Server)
-	fmt.Println("POST", url)
 	req, err := http.NewRequest("POST", url, buffer)
 	defer mb.timeoutHandler()
 	if err != nil {
