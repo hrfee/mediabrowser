@@ -313,11 +313,18 @@ type ActivityLog struct {
 type ActivitySeverity string
 
 const (
-	Info  ActivitySeverity = "Info"
-	Debug ActivitySeverity = "Debug"
-	Warn  ActivitySeverity = "Warn"
-	Error ActivitySeverity = "Error"
+	// Emby (at least from their API docs
 	Fatal ActivitySeverity = "Fatal"
+	// Jellyfin and emby (from code, these are LogLevels)
+	None        ActivitySeverity = "None"
+	Trace       ActivitySeverity = "Trace"
+	Debug       ActivitySeverity = "Debug"
+	Information ActivitySeverity = "Information"
+	Info        ActivitySeverity = "Info"
+	Warn        ActivitySeverity = "Warn"
+	Warning     ActivitySeverity = "Warning"
+	Error       ActivitySeverity = "Error"
+	Critical    ActivitySeverity = "Critical"
 )
 
 type ActivityLogEntry struct {
